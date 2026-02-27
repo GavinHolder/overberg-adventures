@@ -1,222 +1,248 @@
-# Overstrand Adventures — PWA Client Project
+# Overstrand Adventures — PWA
 
-**Project Type:** Progressive Web App (PWA) — MVP
-**Client:** Overstrand Adventures (adventure tourism, Overberg/Kogelberg region, South Africa)
+**Client:** Overstrand Adventures — guided adventure tours, Overberg/Kogelberg region, South Africa
 **Stack:** Django 6 · HTMX · Alpine.js · Bootstrap 5 · PostgreSQL
 **Started:** 2026-02-27
-**Status:** Planning / Design phase
+**Status:** Phase 5 of 15 complete — 46 tests passing
 
 ---
 
-## Project Context
+## What's Built
 
-Client runs guided adventure tours in the Overstrand/Kogelberg area (Kleinmond, Hermanus, etc.). They have an existing prototype app (`ate-dev.web.app`) that defines the exact look, feel and UX this build must replicate pixel-for-pixel. This is a **PWA-first MVP** — Play Store submission deferred to keep initial costs low.
+### Infrastructure (Phase 1)
+Three separate Docker infrastructure stacks + app stack, all managed via Portainer:
 
-The app operates on a **tour-code model**: guide creates a tour in the backend → shares a code → guests enter the code to join their itinerary.
+| Stack | Purpose | Location |
+|-------|---------|---------|
+| `traefik` | Reverse proxy + routing | `deploy/traefik/` |
+| `portainer` | Docker management UI | `deploy/portainer/` |
+| `redis` | Celery broker + cache | `deploy/redis/` |
+| `app` | Django app (web + db + celery + beat) | `deploy/app/` |
 
----
+Dashboard ports locked to localhost (SSH tunnel required). Portainer pinned to `2.21.4`. Redis with AOF persistence. App container uses non-root user; `entrypoint.sh` runs migrations before gunicorn starts.
 
-## UI Reference (plannig/UI/ folder)
+SSH setup guide: `deploy/SSH_SETUP.md`
 
-All 15 screenshots from client's prototype define the required design. Key screens identified:
+### Django Project (Phase 2)
+- Django 6.0.2, Python 3.12
+- All env vars via `python-decouple` (no hardcoded values)
+- `DEV_MODE` — double-guarded: `config('DEV_MODE', ...) and DEBUG` (can never activate in production)
+- `TIME_ZONE = 'Africa/Johannesburg'`
+- WhiteNoise for static files; SendGrid (django-anymail) for email; Celery + Redis for async tasks
+- 10 app skeletons: `accounts`, `tours`, `bookings`, `payments`, `notifications`, `maps`, `nfc`, `landing`, `sos`, `backups`
+- `pytest-django` configured
 
-| Screen | File(s) | Notes |
-|---|---|---|
-| Profile Setup Step 1 — Personal Details | 1000220100 | First/Last, Phone(WA), DOB, Email (read-only from social) |
-| Profile Setup Step 2 — Health Info | 1000220102 | Fitness 1–5, Medical, Dietary |
-| Profile Setup Step 3 — Permissions | 1000220104 | Location + Notification enablement |
-| Profile Setup Step 4 — Personal Notes | 1000220106 | Free text, visible to guide |
-| Profile Setup Step 5 — Indemnity (scroll) | 1000220108 | Agreement text |
-| Indemnity Acceptance Confirmation | 1000220110 | Checkbox + modal confirm |
-| Indemnity Modal | 1000220112 | "I Confirm" CTA |
-| Home — No Tours | 1000220114 | Logo, Welcome [Name], Tour code entry |
-| Tour Join Confirm | 1000220116 | Tour info card + "Join This Trip" |
-| Itinerary — Map + Invite Banner | 1000220118 | Satellite map + RSVP + tour metadata |
-| Itinerary — Day Timeline | 1000220120 | Day-grouped activity cards with tags/times |
-| Home — With Tours | 1000220122 | My Tours list + status badges |
-| Map Tab — Full Screen | 1000220126 | Satellite Google Maps, activity markers, "View Itinerary" pull-up |
-| Profile Tab — Personal Details | 1000220128 | Orange header card, details, health, notes |
-| Profile Tab — Settings | 1000220130 | Location + Notification toggles |
+### Authentication (Phase 3)
+Complete auth system matching the prototype UI:
 
-### Design Language
-- **Background:** Warm cream `#FAF5EE`
-- **Primary:** Orange gradient `#F97316 → #EA580C`
-- **Food/Dining accent:** Teal `#0D9488`
-- **Cards:** White, `border-radius: 16px`, subtle shadow
-- **Nav:** 5-tab bottom bar — Home · Itinerary · SOS · Map · Profile
-- **Maps:** Google Maps Satellite view
-- **Activity markers:** Colour-coded circles by category (orange=hiking, teal=food)
+- **Email signup** — OTP code emailed (6-digit, 15-minute expiry, 3-attempt lockout)
+- **Social login** — Google + Facebook OAuth via django-allauth (scaffold ready; client provides app credentials)
+- **DEV_MODE bypass** — simple username/password login; OTP shown in UI and auto-filled
+- **5-step profile setup wizard** — HTMX partial swaps, no full page reload:
+  1. Personal Details (name, WhatsApp, DOB)
+  2. Health Info (fitness 1–5, medical, dietary)
+  3. Permissions (location + notifications)
+  4. Personal Notes (visible to guide)
+  5. Indemnity Agreement (scroll + Alpine.js modal confirm)
+- **UserProfile model** — roles (GUEST/GUIDE/OPERATOR/ADMIN), wizard completion tracking, `setup_complete` property
+- **Design system** — cream background `#FAF5EE`, orange primary `#F97316`, teal secondary `#0D9488`, card `border-radius: 16px`
 
----
+### Tours System (Phase 4)
+- **ActivityCategory** — name, icon, colour, ordering; 10 initial categories seeded (Hiking, Food & Dining, Kayaking, Cycling, Scenic Drive, Whale Watching, Swimming, Photography, Cultural, Accommodation)
+- **Tour** — name, unique tour code, guide FK, datetime, location (name/lat/lng), capacity, status (DRAFT/ACTIVE/COMPLETED/CANCELLED), GeoJSON polygon, fitness/age restrictions, RSVP deadline; `spots_remaining` + `is_full` properties
+- **ItineraryItem** — day + ordered activities per tour, category, timing, difficulty (EASY/MODERATE/HARD), distance
+- **MapRouteWaypoint** — ordered lat/lng waypoints for walking/driving route overlay
+- **TourCodeWord** — pool of 54 Overberg/nature-themed single words (fynbos, pelican, milkwood, protea, etc.); `generate()` uses `select_for_update()` inside `transaction.atomic()` — concurrency-safe
 
-## Client Requirements
-
-### General Features
-1. **Social + Email Auth** — Google OAuth, Facebook OAuth, and email/password with email verification (OTP code sent to inbox before account activation)
-2. **Google Maps** — Satellite view, polygon drawing for itinerary area highlights, walking/driving route path visualisation; always treat as production-ready
-3. **Mobile-first HTMX** — All app screens must be live/reactive, no static page loads within the PWA
-4. **Push Notifications** — Web Push (PWA); standard notifications (booking confirmations, pre-tour reminders) + dynamic notification manager where client can create custom notifications linked to individual/grouped bookings, itineraries, or any app entity; tag system for grouping; time/date-based scheduling
-5. **NFC** — Web NFC API for check-in/tagging scenarios; payment NFC later; keep extensible
-6. **Future:** Client will provide additional feedback over time; scaffold to accommodate
-
-### Frontend (PWA App)
-- Exact pixel-match to UI reference screenshots
-- Bottom nav: Home, Itinerary, SOS, Map, Profile
-- 5-step profile setup wizard (first login)
-- Tour-code join flow
-- Itinerary viewer (day-grouped timeline, satellite map, activity cards)
-- SOS screen (location share, emergency contacts)
-- Map tab (full-screen satellite, markers, "View Itinerary" pull-up)
-- Profile tab (view/edit details, health, notes, app settings)
-
-### Frontend (Landing Page)
-- Separate from PWA; standard Bootstrap 5 marketing page
-- Navbar + logo, hero, content sections, footer
-- Toggle ON/OFF from backend (maintenance / coming-soon mode)
-- **GrapesJS visual page builder** for client self-editing
-
-### Backend (Admin Panel — mobile-optimised)
-- Manage: users, bookings, payments, leads, enquiries
-- Tour management: create tours, set parameters, manage itinerary items (activities, times, locations, categories, difficulty, duration, distance)
-- Map UI: draw polygons and plan routes visually (for tour area definition)
-- Itinerary builder with restrictions (age, fitness level, group size, capacity)
-- Maintenance mode toggle + landing page toggle
-- Backup/restore system
-- SendGrid transactional email
-- Notification manager (all push notifications managed here)
-- Payment gateway — South African (PayFast or Peach Payments)
-- Manual payment capture option
-- Lead/enquiry pipeline
+### Bookings + Payments (Phase 5)
+- **Booking model** — RSVP_PENDING → CONFIRMED flow; `unique_together` prevents duplicate bookings; `tour_code` assigned after payment confirmation
+- **BookingManager.create_from_rsvp** — atomic capacity check with `select_for_update()` on tour row; raises `ValueError` if full
+- **Payment adapter pattern** (ABC):
+  - `ManualPaymentAdapter` — admin captures payment manually; no webhook
+  - `DevSimulateAdapter` — `simulate_payment()` instantly confirms booking in DEV_MODE
+  - `PayFastAdapter` / `PeachPaymentsAdapter` — stubs scaffolded for Phase 10
+  - `get_payment_adapter()` factory — dispatches on `PAYMENT_GATEWAY` env var + `DEV_MODE`
+  - Email dispatch uses `transaction.on_commit()` — task only fires after DB commit is durable
 
 ---
 
-## Infrastructure (VM)
+## Test Suite
 
-Separate Portainer stacks on client VM:
-- `traefik` — reverse proxy + routing
-- `portainer` — Docker management UI
-- `redis` — Celery broker + cache
-- `app` — Django application (deployed manually from GitHub)
+```
+46 passed, 0 failed (as of Phase 5)
+```
 
-SSH: passwordless via ed25519 key pair (setup on first VM connection)
-Deploy files: `deploy/` folder in repo (one `docker-compose.yml` per stack)
+| App | Test file | Coverage |
+|-----|-----------|---------|
+| accounts | `tests/test_models.py`, `tests/test_views.py` | EmailOTP, UserProfile, OTP verification, wizard |
+| tours | `tests/test_models.py` | All 5 models, seed commands, atomic generate |
+| bookings | `tests/test_booking.py` | RSVP, capacity, uniqueness, spots_remaining/is_full |
+| payments | `tests/test_adapters.py` | Factory dispatch, manual confirm, dev simulate, DEV_MODE guard |
 
-## Tech Stack (Proposed)
-
-| Layer | Technology |
-|---|---|
-| Backend framework | Django 6.0 |
-| API | Django REST Framework |
-| Frontend templating | Django Templates + HTMX + Alpine.js |
-| CSS framework | Bootstrap 5.3 |
-| Database | PostgreSQL (upgrade from SQLite) |
-| Auth | django-allauth (Google + Facebook + email) |
-| Maps | Google Maps JavaScript API v3 |
-| Push notifications | Web Push Protocol + django-webpush + FCM |
-| Email | SendGrid (django-anymail) |
-| Payments (SA) | PayFast or Peach Payments |
-| NFC | Web NFC API (browser-native, Android Chrome) |
-| Landing page builder | GrapesJS |
-| Background tasks | Celery + Redis |
-| Deployment | Docker + Portainer + Traefik |
-| File storage | Local (MVP) → S3-compatible later |
+Run all tests:
+```bash
+pytest -v
+```
 
 ---
 
-## App Architecture (High-Level)
+## Project Structure
 
 ```
 overberg_adventures/          ← Django project
 ├── apps/
-│   ├── accounts/             ← Auth, profiles, social login, email verification
-│   ├── tours/                ← Tour model, itinerary items, tour codes
-│   ├── bookings/             ← Bookings, RSVPs, capacity
-│   ├── payments/             ← PayFast/Peach, manual capture
-│   ├── notifications/        ← Push notifications, notification manager, tags
-│   ├── maps/                 ← Polygon storage, route planning
-│   ├── nfc/                  ← NFC check-in, tagging
-│   ├── landing/              ← GrapesJS landing page, toggle
-│   ├── sos/                  ← SOS feature, emergency contacts
-│   └── backups/              ← Backup/restore management
-├── dashboard/                ← Existing skeleton (repurpose as admin shell)
-├── pwa/                      ← PWA manifest, service worker, offline
+│   ├── accounts/             ← Auth, profiles, social login, email OTP
+│   ├── tours/                ← Tour model, itinerary items, tour codes, seed commands
+│   ├── bookings/             ← Bookings, RSVPs, capacity management
+│   ├── payments/             ← Payment adapter ABC + Manual/Dev/PayFast/Peach adapters
+│   ├── notifications/        ← Push notifications, Celery tasks (placeholder)
+│   ├── maps/                 ← Polygon storage, route planning (Phase 7)
+│   ├── nfc/                  ← NFC check-in, tagging (Phase 12)
+│   ├── landing/              ← GrapesJS landing page, maintenance mode (Phase 11)
+│   ├── sos/                  ← SOS feature, emergency contacts (Phase 6)
+│   └── backups/              ← Backup/restore management (Phase 13)
+├── deploy/
+│   ├── traefik/              ← Traefik stack
+│   ├── portainer/            ← Portainer stack
+│   ├── redis/                ← Redis stack
+│   ├── app/                  ← App stack (docker-compose.yml)
+│   └── SSH_SETUP.md          ← VM setup guide
 ├── templates/
-│   ├── app/                  ← PWA HTMX templates
-│   ├── admin_panel/          ← Mobile-optimised backend
-│   └── landing/              ← GrapesJS-rendered landing page
-└── static/
+│   ├── base_app.html         ← PWA base (Bootstrap 5, HTMX, Alpine.js, bottom nav)
+│   ├── app/partials/         ← Bottom nav, shared partials
+│   └── accounts/             ← Login, OTP verify, 5-step profile wizard
+├── static/
+│   └── css/app.css           ← Design token system + component classes
+├── Dockerfile
+├── entrypoint.sh
+├── .env.example
+├── CHANGELOG.md              ← Detailed change history
+└── ROADMAP.md                ← Upcoming phases
 ```
 
 ---
 
-## Open Questions — RESOLVED 2026-02-27
+## Design Language
 
-| Question | Answer |
-|---|---|
-| Payment gateway | Agnostic scaffolding (adapter pattern) — client provides gateway details later |
-| Domain/hosting | IP-based, local VM for dev; client provides IP + SSH creds |
-| SOS | All options (guide alert, emergency contacts, live GPS link) — each toggleable by superuser |
-| Activity categories | Fully dynamic, client-managed in backend; seed script provides initial set |
-| Tour code format | Random memorable word (Overberg/nature themed) — sent via email on payment confirm |
-| Guide role | Both PWA + admin; superuser configures what guides can see per permission toggle |
-| Google Maps | New GCP project from scratch |
-| NFC hardware | TBD, scaffold Web NFC API now |
-
-## Remaining Open Question
-
-**Tour code format:** single word (e.g. "fynbos") or compound (e.g. "wild-pelican")? How many characters/words maximum?
-
----
-
-## Key Constraints
-
-- PWA only (no Play Store / App Store for MVP)
-- South African market (ZAR payments, +27 phone numbers)
-- Mobile-first — all features must work on Android Chrome
-- Web NFC is Android Chrome only (not iOS) — document this limitation
-- Visual fidelity to prototype is non-negotiable
+| Token | Value |
+|-------|-------|
+| Background | `#FAF5EE` (warm cream) |
+| Primary | `#F97316 → #EA580C` (orange gradient) |
+| Secondary | `#0D9488` (teal — food/dining accent) |
+| Surface | `#FFFFFF` |
+| Text | `#1C1917` |
+| Text muted | `#78716C` |
+| Border | `#E7E5E4` |
+| Danger | `#EF4444` |
+| Card | white, `border-radius: 16px`, subtle shadow |
+| Nav | 5-tab bottom bar: Home · Itinerary · SOS · Map · Profile |
+| Maps | Google Maps satellite view |
 
 ---
 
-## Development Phases (Draft)
+## Tech Stack
 
-| Phase | Scope |
-|---|---|
-| 1 | Project scaffold, Docker, PostgreSQL, settings, CI |
-| 2 | Auth system (email + Google + Facebook + OTP verification) |
-| 3 | Profile setup wizard (5-step) |
-| 4 | Tour model + tour code join flow |
-| 5 | Itinerary viewer + day timeline |
-| 6 | Google Maps integration (satellite, markers, polygons, routes) |
-| 7 | SOS feature |
-| 8 | Push notifications + notification manager |
-| 9 | Backend admin panel (tours, users, bookings) |
-| 10 | Payments (PayFast/Peach + manual) |
-| 11 | Landing page + GrapesJS builder |
-| 12 | NFC check-in |
-| 13 | Backup/restore, maintenance mode |
-| 14 | PWA manifest, service worker, offline support |
-| 15 | QA, performance, production hardening |
+| Layer | Technology |
+|-------|-----------|
+| Backend | Django 6.0.2 |
+| Frontend templating | Django Templates + HTMX + Alpine.js |
+| CSS | Bootstrap 5.3 + custom design tokens |
+| Database | PostgreSQL (SQLite for local dev) |
+| Auth | django-allauth (Google + Facebook + email/OTP) |
+| Email | SendGrid (django-anymail) |
+| Maps | Google Maps JavaScript API v3 (Phase 7) |
+| Push notifications | Web Push + django-webpush + FCM (Phase 8) |
+| Payments | Gateway-agnostic adapter — PayFast/Peach (Phase 10) |
+| NFC | Web NFC API, Android Chrome only (Phase 12) |
+| Landing page builder | GrapesJS (Phase 11) |
+| Background tasks | Celery + Redis |
+| Deployment | Docker + Portainer + Traefik |
+| File storage | Local (MVP) → S3-compatible post-MVP |
 
 ---
 
-## Developer Mode Features
+## Environment Setup
 
-When `DEV_MODE=true` (only when `DEBUG=True`):
-- "Simulate Payment (Paid)" button bypasses payment gateway
-- OTP shown in UI / auto-filled (no real email needed)
-- Simple username/password login (bypass OAuth)
-- Skip payment step on booking flow
-- Notification preview without FCM
-- NFC tap simulation button
-- Visible "DEV MODE ACTIVE" banner in admin panel
+```bash
+# Copy env file and fill in values
+cp .env.example .env
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run migrations
+python manage.py migrate
+
+# Seed reference data
+python manage.py seed_categories
+python manage.py seed_tour_codes
+
+# Run tests
+pytest -v
+
+# Start dev server
+python manage.py runserver
+```
+
+Key env vars:
+
+| Variable | Required | Notes |
+|----------|----------|-------|
+| `DJANGO_SECRET_KEY` | Yes | Generate with `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"` |
+| `DEBUG` | Yes | `True` for dev, `False` for prod |
+| `DEV_MODE` | Optional | Only active when `DEBUG=True` |
+| `DATABASE_URL` | Prod only | Defaults to SQLite for local dev |
+| `SENDGRID_API_KEY` | Prod | Console email fallback in dev |
+| `GOOGLE_CLIENT_ID/SECRET` | Optional | OAuth login |
+| `FACEBOOK_APP_ID/SECRET` | Optional | OAuth login |
+| `GOOGLE_MAPS_API_KEY` | Phase 7 | |
+| `REDIS_URL` | Prod | `redis://localhost:6379/0` default |
+
+---
+
+## Client Requirements Status
+
+| Requirement | Status |
+|-------------|--------|
+| Email auth + OTP verification | ✅ Built |
+| Google + Facebook OAuth | ✅ Scaffolded (needs client credentials) |
+| 5-step profile setup wizard | ✅ Built |
+| Tour code system (single Overberg word) | ✅ Built |
+| Booking + RSVP + capacity enforcement | ✅ Built |
+| Payment adapter (gateway-agnostic) | ✅ Scaffolded |
+| Google Maps (satellite, markers, polygons, routes) | Phase 7 |
+| Push notifications + notification manager | Phase 8 |
+| Backend admin panel | Phase 9 |
+| PayFast / Peach Payments | Phase 10 |
+| Landing page + GrapesJS | Phase 11 |
+| NFC check-in | Phase 12 |
+| Backup / restore | Phase 13 |
+| DEV MODE overlay | Phase 14 |
+| PWA manifest + service worker + offline | Phase 15 |
+| SOS screen | Phase 6 |
+| Full-screen map tab | Phase 6 |
+
+---
+
+## Open Items (Waiting on Client)
+
+| Item | Notes |
+|------|-------|
+| VM IP + SSH credentials | For deployment |
+| Google Maps GCP project | New project from scratch |
+| Payment gateway preference | PayFast vs Peach Payments |
+| Domain name | IP-based for dev; domain needed for HTTPS |
+| SendGrid API key | Transactional email |
+| Google OAuth credentials | Client ID + Secret |
+| Facebook App credentials | App ID + Secret |
+
+---
 
 ## Session Log
 
-| Date | Session Summary |
-|---|---|
-| 2026-02-27 | Initial client brief received; all 15 UI screens reviewed; README + design doc created; open questions resolved; new requirements captured (tour codes, dev mode, VM infra, payment adapter pattern) |
+| Date | Summary |
+|------|---------|
+| 2026-02-27 | Initial client brief; all 15 UI screens reviewed; README + design doc created; questions resolved; new requirements captured (tour codes, dev mode, VM infra, payment adapter) |
+| 2026-02-27 | Phases 1–5 implemented: Docker infra, Django setup, auth + profile wizard, tours system, bookings + payment adapter; 46 tests passing |
 
----
-
-*This README is the source of truth for project context. Update after every significant session.*
+*See `CHANGELOG.md` for full commit-by-commit history. See `ROADMAP.md` for upcoming phases.*
