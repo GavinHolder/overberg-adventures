@@ -55,6 +55,7 @@ class Tour(models.Model):
         CANCELLED = 'CANCELLED', 'Cancelled'
 
     name = models.CharField(max_length=200)
+    tour_code = models.CharField(max_length=50, unique=True, blank=True)
     description = models.TextField(blank=True)
     guide = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
@@ -130,7 +131,7 @@ class ItineraryItem(models.Model):
     )
 
     class Meta:
-        ordering = ['day', 'order', 'start_time']
+        ordering = ['day', 'order']
 
     def __str__(self):
         return f'Day {self.day} - {self.title}'
