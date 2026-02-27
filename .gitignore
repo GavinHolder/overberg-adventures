@@ -32,8 +32,11 @@ env/
 .vscode/
 *.iml
 
-# Claude session files (keep CLAUDE.md but not memory)
-.claude/memory/
+# Claude session files
+.claude/
+
+# UI reference screenshots (client assets, not for repo)
+plannig/
 
 # OS
 .DS_Store
