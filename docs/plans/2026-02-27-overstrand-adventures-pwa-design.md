@@ -408,8 +408,8 @@ Custom-built with Bootstrap 5, designed to work on phone screen:
 ## 15b. New Requirements (2026-02-27)
 
 ### Tour Code System
-- Format: **randomly generated memorable word** (e.g. nature/Overberg themed: "fynbos", "pelican", "milkwood", "protea")
-- Can optionally be compound (e.g. "blue-fynbos" or "wild-pelican") — **to confirm: single word or multi-word?**
+- Format: **single randomly generated memorable word** (e.g. nature/Overberg themed: "fynbos", "pelican", "milkwood", "protea", "renosterveld", "klipspringer")
+- Word list curated from Overberg/Kogelberg flora, fauna, landmarks — stored in DB as `TourCodeWord` model for client management
 - Delivery: sent via SendGrid email upon payment confirmation
 - Dev mode: "Simulate Payment" button in payment management section → triggers same flow (code generated + email sent or displayed on screen)
 
@@ -495,11 +495,12 @@ Middle ground. Still adds frontend complexity vs HTMX.
 
 ## Approval Status
 
-- [ ] Architecture approved
-- [ ] Tech stack approved
-- [ ] Screen specifications approved
-- [ ] Open questions answered
-- [ ] Ready to proceed to implementation planning
+- [x] Architecture approved (monolith-first)
+- [x] Tech stack approved
+- [x] Screen specifications approved
+- [x] Open questions answered (2026-02-27)
+- [x] Tour code format confirmed: single word, Overberg/nature themed
+- [x] Ready to proceed to implementation planning
 
 ---
 
