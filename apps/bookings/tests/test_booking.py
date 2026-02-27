@@ -73,7 +73,9 @@ def test_booking_str(make_user, make_tour):
     user = make_user()
     tour = make_tour()
     booking = Booking.objects.create_from_rsvp(user=user, tour=tour)
-    assert str(booking) != ''
+    result = str(booking)
+    assert user.username in result
+    assert tour.name in result
 
 
 @pytest.mark.django_db

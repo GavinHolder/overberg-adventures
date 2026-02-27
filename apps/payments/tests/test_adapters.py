@@ -55,12 +55,23 @@ def test_get_adapter_returns_dev_when_dev_gateway(settings):
 
 
 def test_get_adapter_returns_dev_when_manual_and_dev_mode(settings):
+    """manual + DEV_MODE=True still returns DevSimulateAdapter."""
     settings.PAYMENT_GATEWAY = 'manual'
     settings.DEV_MODE = True
     from apps.payments.adapters import get_payment_adapter
     from apps.payments.adapters.dev import DevSimulateAdapter
     adapter = get_payment_adapter()
     assert isinstance(adapter, DevSimulateAdapter)
+
+
+def test_dev_mode_required_for_dev_adapter(settings):
+    """DevSimulateAdapter must not be returned when DEV_MODE=False."""
+    settings.PAYMENT_GATEWAY = 'dev'
+    settings.DEV_MODE = False
+    from apps.payments.adapters import get_payment_adapter
+    from apps.payments.adapters.manual import ManualPaymentAdapter
+    adapter = get_payment_adapter()
+    assert isinstance(adapter, ManualPaymentAdapter)
 
 
 @pytest.mark.django_db
@@ -100,3 +111,16 @@ def test_payment_result_defaults():
     result = PaymentResult(success=True)
     assert result.reference == ''
     assert result.error == ''
+
+
+@pytest.mark.django_db
+def test_manual_confirm_sets_status_enum(booking, seeded_words):
+    """process_confirmation must use Status enum, not raw string."""
+    from apps.payments.adapters.manual import ManualPaymentAdapter
+    from apps.payments.adapters.base import PaymentResult
+    from apps.bookings.models import Booking
+    adapter = ManualPaymentAdapter()
+    result = PaymentResult(success=True, reference='TEST-001')
+    adapter.process_confirmation(booking, result)
+    booking.refresh_from_db()
+    assert booking.status == Booking.Status.CONFIRMED

@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth import get_user_model
 from apps.tours.models import Tour
 
@@ -8,20 +8,28 @@ User = get_user_model()
 class BookingManager(models.Manager):
     def create_from_rsvp(self, user, tour):
         """
-        Create an RSVP_PENDING booking if tour has capacity.
-        Raises ValueError if tour is full.
+        Atomically check capacity and create RSVP_PENDING booking.
+        Uses select_for_update to prevent concurrent overbooking.
 
         ASSUMPTIONS:
         1. tour.capacity is set and > 0
         2. user is authenticated
-        3. Caller handles unique_together violation for duplicate bookings
+        3. unique_together handles duplicate booking attempts gracefully
+
+        FAILURE MODES:
+        - Concurrent RSVPs: select_for_update locks tour row until transaction commits
+        - DB unavailable: transaction rolls back, caller receives DatabaseError
         """
-        confirmed_count = self.filter(
-            tour=tour, status__in=['RSVP_PENDING', 'CONFIRMED']
-        ).count()
-        if confirmed_count >= tour.capacity:
-            raise ValueError(f'Tour at capacity ({tour.capacity})')
-        return self.create(user=user, tour=tour, status=Booking.Status.RSVP_PENDING)
+        with transaction.atomic():
+            # Lock the tour row to prevent concurrent overbooking
+            locked_tour = Tour.objects.select_for_update().get(pk=tour.pk)
+            confirmed_count = self.filter(
+                tour=locked_tour,
+                status__in=[Booking.Status.RSVP_PENDING, Booking.Status.CONFIRMED],
+            ).count()
+            if confirmed_count >= locked_tour.capacity:
+                raise ValueError(f'Tour at capacity ({locked_tour.capacity})')
+            return self.create(user=user, tour=locked_tour, status=Booking.Status.RSVP_PENDING)
 
 
 class Booking(models.Model):

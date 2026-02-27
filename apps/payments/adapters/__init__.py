@@ -17,7 +17,7 @@ def get_payment_adapter():
     if gateway == 'peach':
         from .peach import PeachPaymentsAdapter
         return PeachPaymentsAdapter()
-    if gateway == 'dev' or (gateway == 'manual' and getattr(settings, 'DEV_MODE', False)):
+    if (gateway in ('dev', 'manual')) and getattr(settings, 'DEV_MODE', False):
         from .dev import DevSimulateAdapter
         return DevSimulateAdapter()
     from .manual import ManualPaymentAdapter

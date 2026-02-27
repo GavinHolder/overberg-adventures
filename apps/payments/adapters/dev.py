@@ -20,10 +20,12 @@ class DevSimulateAdapter(PaymentGatewayAdapter):
         return result
 
     def process_confirmation(self, booking, result: PaymentResult) -> None:
+        from django.db import transaction
+        from apps.bookings.models import Booking
         from apps.tours.models import TourCodeWord
         from apps.notifications.tasks import send_tour_code_email
-        booking.status = 'CONFIRMED'
+        booking.status = Booking.Status.CONFIRMED
         booking.tour_code = TourCodeWord.generate()
         booking.confirmed_at = timezone.now()
         booking.save()
-        send_tour_code_email.delay(booking.pk)
+        transaction.on_commit(lambda: send_tour_code_email.delay(booking.pk))
