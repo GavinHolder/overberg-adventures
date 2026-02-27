@@ -1,0 +1,27 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Profile Setup — Step {{ step }} of 5{% endblock %}
+
+{% block content %}
+<div style="background: var(--color-bg); min-height: 100vh; padding: 24px 20px 40px;">
+
+  <!-- Header -->
+  <div class="mb-4">
+    <h1 class="fw-bold mb-1" style="font-size: 22px;">Complete Your Profile</h1>
+    <p style="color: var(--color-text-muted); font-size: 14px; margin: 0;">Step {{ step }} of {{ total_steps }}</p>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="progress-steps mb-4">
+    {% for i in "12345" %}
+    <div class="progress-step {% if forloop.counter <= step %}done{% endif %}"></div>
+    {% endfor %}
+  </div>
+
+  <!-- Step content (HTMX swap target) -->
+  <div id="step-content" hx-target="#step-content" hx-swap="innerHTML">
+    {% include step_template %}
+  </div>
+
+</div>
+{% endblock %}

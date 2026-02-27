@@ -1,0 +1,133 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Verify Email — Overstrand Adventures{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex flex-column" style="background: var(--color-bg); padding: 24px;">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center mb-4">
+    <a href="{% url 'accounts:login' %}" class="btn btn-link p-0 me-3" style="color: var(--color-text);">
+      <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+      </svg>
+    </a>
+    <div>
+      <h1 class="fw-bold mb-0" style="font-size: 22px;">Check your email</h1>
+      <p class="mb-0" style="color: var(--color-text-muted); font-size: 14px;">
+        We sent a 6-digit code to <strong>{{ masked_email }}</strong>
+      </p>
+    </div>
+  </div>
+
+  <!-- DEV MODE — show code on screen -->
+  {% if dev_mode and dev_otp %}
+  <div class="card-oa mb-4" style="border: 2px solid #F59E0B; background: #FFFBEB;">
+    <p class="mb-1 fw-bold" style="color: #D97706; font-size: 13px;">DEV MODE — Your OTP code:</p>
+    <p class="mb-0 fw-bold" style="font-size: 36px; letter-spacing: 8px; color: var(--color-text);">{{ dev_otp }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Error messages -->
+  {% if error %}
+  <div class="alert alert-danger py-2 px-3 mb-3" style="border-radius: 10px; font-size: 14px;">
+    {% if error == 'locked' %}
+      Too many incorrect attempts. Please request a new code.
+    {% elif error == 'expired' %}
+      Your code has expired. Please request a new one.
+    {% elif error == 'wrong' %}
+      Incorrect code. Please try again.
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'danger' }} py-2 px-3" style="border-radius: 10px; font-size: 14px;">
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- OTP input form -->
+  <div class="card-oa flex-grow-1">
+    <form method="post" action="{% url 'accounts:verify_otp' %}" x-data="otpForm()" @submit="combineCode">
+      {% csrf_token %}
+      <input type="hidden" name="code" x-ref="codeInput">
+
+      <label class="label-xs mb-3">Enter verification code</label>
+
+      <!-- 6 individual digit boxes -->
+      <div class="d-flex gap-2 justify-content-center mb-4" id="otp-boxes">
+        <template x-for="(digit, index) in digits" :key="index">
+          <input
+            type="text"
+            inputmode="numeric"
+            maxlength="1"
+            pattern="[0-9]"
+            class="otp-input"
+            :value="digit"
+            @input="onInput($event, index)"
+            @keydown="onKeydown($event, index)"
+            @paste="onPaste($event)"
+            :id="'otp-' + index"
+            autocomplete="one-time-code"
+          >
+        </template>
+      </div>
+
+      <button type="submit" class="btn-oa-primary">Verify</button>
+    </form>
+
+    <p class="text-center mt-3" style="font-size: 13px; color: var(--color-text-muted);">
+      Didn't receive it?
+      <a href="{% url 'accounts:login' %}" style="color: var(--color-primary); text-decoration: none; font-weight: 600;">
+        Try again
+      </a>
+    </p>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function otpForm() {
+  return {
+    digits: ['', '', '', '', '', ''],
+    onInput(event, index) {
+      const val = event.target.value.replace(/\D/g, '');
+      this.digits[index] = val.slice(-1);
+      event.target.value = this.digits[index];
+      if (this.digits[index] && index < 5) {
+        document.getElementById('otp-' + (index + 1)).focus();
+      }
+    },
+    onKeydown(event, index) {
+      if (event.key === 'Backspace' && !this.digits[index] && index > 0) {
+        document.getElementById('otp-' + (index - 1)).focus();
+      }
+    },
+    onPaste(event) {
+      event.preventDefault();
+      const pasted = (event.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+      pasted.split('').forEach((char, i) => {
+        if (i < 6) {
+          this.digits[i] = char;
+          const el = document.getElementById('otp-' + i);
+          if (el) el.value = char;
+        }
+      });
+      const last = Math.min(pasted.length, 5);
+      const el = document.getElementById('otp-' + last);
+      if (el) el.focus();
+    },
+    combineCode(event) {
+      this.$refs.codeInput.value = this.digits.join('');
+    },
+  };
+}
+</script>
+{% endblock %}

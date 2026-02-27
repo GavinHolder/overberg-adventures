@@ -1,0 +1,124 @@
+{% load static %}
+<div x-data="{ accepted: false, showModal: false }">
+
+  <form
+    id="indemnity-form"
+    method="post"
+    action="{% url 'accounts:profile_setup_step' step=5 %}"
+    @submit.prevent="if (accepted) { showModal = true }"
+  >
+    {% csrf_token %}
+
+    <!-- Icon + heading -->
+    <div class="d-flex align-items-center gap-3 mb-2">
+      <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(249,115,22,0.1); display: flex; align-items: center; justify-content: center;">
+        <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="var(--color-primary)">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+        </svg>
+      </div>
+      <div>
+        <h2 class="fw-bold mb-0" style="font-size: 19px;">Indemnity Agreement</h2>
+      </div>
+    </div>
+    <p class="mb-3" style="color: var(--color-text-muted); font-size: 13px;">
+      Please read the full agreement before accepting.
+    </p>
+
+    <!-- Indemnity scroll box -->
+    <div class="indemnity-scroll mb-3">
+      <p><strong>OVERSTRAND ADVENTURES — INDEMNITY AND ASSUMPTION OF RISK AGREEMENT</strong></p>
+
+      <p>I, the undersigned, hereby acknowledge that I am voluntarily participating in adventure activities organised by Overstrand Adventures (the "Operator"). These activities may include, but are not limited to, hiking, kayaking, swimming, trail running, mountain biking, abseiling, and any other outdoor or adventure activities offered by the Operator.</p>
+
+      <p><strong>1. Assumption of Risk</strong><br>
+      I understand and acknowledge that participation in adventure activities involves inherent risks, dangers, and hazards. These risks include, but are not limited to: physical injury, illness, death, property damage, environmental factors, acts of nature, animal encounters, and the actions of other participants. I voluntarily assume all such risks.</p>
+
+      <p><strong>2. Release of Liability</strong><br>
+      I hereby release, discharge, and hold harmless Overstrand Adventures, its directors, employees, guides, agents, and representatives from any and all claims, demands, losses, or liabilities arising out of or related to my participation in any activity, whether caused by negligence or otherwise.</p>
+
+      <p><strong>3. Medical Fitness</strong><br>
+      I confirm that I am in good physical condition and medically fit to participate in the activities I have selected. I have disclosed any medical conditions that may be relevant to my participation. I take full responsibility for my own health and wellbeing during the activity.</p>
+
+      <p><strong>4. Emergency Treatment</strong><br>
+      In the event of an emergency, I authorise the Operator and its representatives to seek and obtain emergency medical treatment on my behalf. I accept responsibility for all costs associated with such treatment.</p>
+
+      <p><strong>5. Conduct</strong><br>
+      I agree to follow all instructions given by the guides, act responsibly, and not behave in a manner that endangers myself or others. I understand that failure to comply may result in my removal from the activity without refund.</p>
+
+      <p><strong>6. Governing Law</strong><br>
+      This agreement shall be governed by the laws of the Republic of South Africa. Any disputes shall be resolved in the courts of the Western Cape.</p>
+
+      <p>By accepting this agreement, I confirm that I have read, understood, and voluntarily agree to all terms above.</p>
+    </div>
+
+    <!-- Date -->
+    <p style="font-size: 13px; color: var(--color-text-muted); margin-bottom: 12px;">
+      Date: <strong>{% now "j F Y" %}</strong>
+    </p>
+
+    <!-- Checkbox -->
+    <div class="mb-4 d-flex align-items-start gap-2">
+      <input
+        type="checkbox"
+        id="indemnity_accepted"
+        name="indemnity_accepted"
+        value="on"
+        x-model="accepted"
+        style="width: 20px; height: 20px; margin-top: 2px; accent-color: var(--color-primary); flex-shrink: 0; cursor: pointer;"
+      >
+      <label for="indemnity_accepted" style="font-size: 14px; cursor: pointer; line-height: 1.4;">
+        I have read and accept the Indemnity Agreement. I understand the risks involved and consent to participate.
+      </label>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex gap-3">
+      <a href="{% url 'accounts:profile_setup_step' step=4 %}" class="btn-oa-secondary text-center text-decoration-none" style="flex:1; padding: 14px 24px; border-radius: 14px;">
+        &lsaquo; Back
+      </a>
+      <button
+        type="submit"
+        class="btn-oa-primary"
+        style="flex:2;"
+        :disabled="!accepted"
+        :style="!accepted ? 'opacity: 0.5; cursor: not-allowed;' : ''"
+      >
+        Complete Profile
+      </button>
+    </div>
+
+  </form>
+
+  <!-- Confirmation modal -->
+  <div class="modal-overlay" x-show="showModal" x-cloak @click.self="showModal = false">
+    <div class="modal-card">
+
+      <!-- Shield icon -->
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(249,115,22,0.12); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="var(--color-primary)">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+        </svg>
+      </div>
+
+      <h3 class="fw-bold mb-2" style="font-size: 18px;">Confirm Indemnity Acceptance</h3>
+      <p style="font-size: 14px; color: var(--color-text-muted); margin-bottom: 24px;">
+        By confirming, you are legally accepting the Overstrand Adventures Indemnity Agreement. This action is recorded with your name and timestamp.
+      </p>
+
+      <div class="d-flex flex-column gap-2">
+        <form method="post" action="{% url 'accounts:profile_setup_step' step=5 %}">
+          {% csrf_token %}
+          <input type="hidden" name="indemnity_accepted" value="on">
+          <button type="submit" class="btn-oa-primary">I Confirm</button>
+        </form>
+        <button
+          type="button"
+          class="btn-oa-secondary"
+          @click="showModal = false"
+          style="width: 100%; padding: 14px 24px; border-radius: 14px;"
+        >Cancel</button>
+      </div>
+    </div>
+  </div>
+
+</div>

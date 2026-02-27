@@ -1,0 +1,13 @@
+{% if field == 'location_enabled' %}
+  {% if profile.location_enabled %}
+    <span class="badge" style="background: #DCFCE7; color: #15803D;">Location ON</span>
+  {% else %}
+    <span class="badge" style="background: #F3F4F6; color: #6B7280;">Location OFF</span>
+  {% endif %}
+{% elif field == 'notifications_enabled' %}
+  {% if profile.notifications_enabled %}
+    <span class="badge" style="background: #DCFCE7; color: #15803D;">Notifications ON</span>
+  {% else %}
+    <span class="badge" style="background: #F3F4F6; color: #6B7280;">Notifications OFF</span>
+  {% endif %}
+{% endif %}
