@@ -1,0 +1,66 @@
+# App stack - client deploys manually from GitHub via Portainer
+# Replace YOUR_GITHUB_ORG with actual org once GitHub repo is set up
+services:
+  web:
+    image: ghcr.io/YOUR_GITHUB_ORG/overberg-adventures:latest
+    container_name: oa_web
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.oa.rule=PathPrefix(`/`)"
+      - "traefik.http.services.oa.loadbalancer.server.port=8000"
+    networks:
+      - traefik_net
+
+  db:
+    image: postgres:16-alpine
+    container_name: oa_db
+    restart: unless-stopped
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - traefik_net
+
+  celery:
+    image: ghcr.io/YOUR_GITHUB_ORG/overberg-adventures:latest
+    container_name: oa_celery
+    restart: unless-stopped
+    env_file: .env
+    command: celery -A overberg_adventures worker -l info -c 4
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - traefik_net
+
+  celery-beat:
+    image: ghcr.io/YOUR_GITHUB_ORG/overberg-adventures:latest
+    container_name: oa_celery_beat
+    restart: unless-stopped
+    env_file: .env
+    command: celery -A overberg_adventures beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - traefik_net
+
+volumes:
+  pg_data:
+
+networks:
+  traefik_net:
+    external: true
