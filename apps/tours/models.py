@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
@@ -35,16 +35,25 @@ class TourCodeWord(models.Model):
 
     @classmethod
     def generate(cls):
-        """Pick a random unused word. Raises ValueError if pool exhausted."""
-        word_obj = cls.objects.filter(is_used=False).order_by('?').first()
-        if not word_obj:
-            raise ValueError(
-                'Tour code word pool exhausted — run seed_tour_codes or add words via admin.'
+        """
+        Pick a random unused word and mark it used atomically.
+        Raises ValueError if the pool is exhausted.
+        """
+        with transaction.atomic():
+            word_obj = (
+                cls.objects.select_for_update()
+                .filter(is_used=False)
+                .order_by('?')
+                .first()
             )
-        word_obj.is_used = True
-        word_obj.used_at = timezone.now()
-        word_obj.save()
-        return word_obj.word
+            if not word_obj:
+                raise ValueError(
+                    'Tour code word pool exhausted — run seed_tour_codes or add words via admin.'
+                )
+            word_obj.is_used = True
+            word_obj.used_at = timezone.now()
+            word_obj.save()
+            return word_obj.word
 
 
 class Tour(models.Model):
@@ -112,7 +121,11 @@ class ItineraryItem(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     category = models.ForeignKey(
-        ActivityCategory, on_delete=models.SET_NULL, null=True, blank=True
+        ActivityCategory,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='itinerary_items',
     )
     start_time = models.TimeField()
     duration_minutes = models.PositiveSmallIntegerField(default=60)

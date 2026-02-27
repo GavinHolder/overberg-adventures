@@ -8,13 +8,11 @@ OVERBERG_WORDS = [
     'overstrand', 'baboon', 'rockpool', 'saltwater', 'granite', 'bluegum',
     'peninsula', 'anchor', 'tidal', 'fernwood', 'beacon', 'crest',
     'strandloper', 'otter', 'egret', 'kingfisher', 'heron', 'ibis',
-    'geranium', 'orchid', 'buchu', 'rooibos', 'honeybush', 'milkwood',
-    'fynbos', 'protea', 'pelargonium', 'leucadendron', 'restio',
+    'geranium', 'orchid', 'buchu', 'rooibos', 'honeybush',
+    'pelargonium', 'leucadendron', 'restio',
     'paarl', 'elgin', 'stanford', 'gansbaai', 'pringle', 'rooi',
     'walker', 'sunrise', 'trailhead', 'summit', 'compass', 'canyon',
 ]
-# Deduplicate while preserving list
-OVERBERG_WORDS = list(dict.fromkeys(OVERBERG_WORDS))
 
 
 class Command(BaseCommand):

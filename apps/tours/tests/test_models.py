@@ -84,18 +84,11 @@ def test_tour_spots_remaining_no_bookings(tour):
     assert not tour.is_full
 
 
+@pytest.mark.skip(reason="Booking model not yet built (Phase 5) — re-enable when Booking FK is added")
 @pytest.mark.django_db
 def test_tour_spots_remaining_with_bookings(tour):
-    from apps.accounts.models import UserProfile
-    for i in range(3):
-        user = User.objects.create_user(
-            username=f'u{i}@test.com', email=f'u{i}@test.com', password='x'
-        )
-        # Simulate confirmed bookings via direct model (bookings app not built yet)
-        from django.apps import apps
-        # Just test the property formula directly
-    tour_fresh = Tour.objects.get(pk=tour.pk)
-    assert tour_fresh.spots_remaining == 10  # no bookings yet
+    """Placeholder — will test that spots_remaining decreases as bookings are added."""
+    pass
 
 
 @pytest.mark.django_db
