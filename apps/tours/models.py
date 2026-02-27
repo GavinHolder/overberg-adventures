@@ -96,17 +96,12 @@ class Tour(models.Model):
 
     @property
     def spots_remaining(self):
-        # bookings reverse relation added when Booking model (Phase 5) is created
-        if not hasattr(self, 'bookings'):
-            return self.capacity
-        confirmed = self.bookings.filter(
-            status__in=['RSVP_PENDING', 'CONFIRMED']
-        ).count()
-        return max(0, self.capacity - confirmed)
+        booked = self.bookings.filter(status__in=['RSVP_PENDING', 'CONFIRMED']).count()
+        return self.capacity - booked
 
     @property
     def is_full(self):
-        return self.spots_remaining == 0
+        return self.spots_remaining <= 0
 
 
 class ItineraryItem(models.Model):

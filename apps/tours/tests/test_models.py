@@ -84,11 +84,15 @@ def test_tour_spots_remaining_no_bookings(tour):
     assert not tour.is_full
 
 
-@pytest.mark.skip(reason="Booking model not yet built (Phase 5) — re-enable when Booking FK is added")
 @pytest.mark.django_db
 def test_tour_spots_remaining_with_bookings(tour):
-    """Placeholder — will test that spots_remaining decreases as bookings are added."""
-    pass
+    from apps.bookings.models import Booking
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    for i in range(3):
+        user = User.objects.create_user(username=f'guest{i}', password='x')
+        Booking.objects.create(user=user, tour=tour, status='RSVP_PENDING')
+    assert tour.spots_remaining == 7  # capacity=10, 3 booked
 
 
 @pytest.mark.django_db
