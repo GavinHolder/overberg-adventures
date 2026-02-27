@@ -90,6 +90,17 @@ All 15 screenshots from client's prototype define the required design. Key scree
 
 ---
 
+## Infrastructure (VM)
+
+Separate Portainer stacks on client VM:
+- `traefik` — reverse proxy + routing
+- `portainer` — Docker management UI
+- `redis` — Celery broker + cache
+- `app` — Django application (deployed manually from GitHub)
+
+SSH: passwordless via ed25519 key pair (setup on first VM connection)
+Deploy files: `deploy/` folder in repo (one `docker-compose.yml` per stack)
+
 ## Tech Stack (Proposed)
 
 | Layer | Technology |
@@ -138,16 +149,22 @@ overberg_adventures/          ← Django project
 
 ---
 
-## Open Questions / Decisions Needed
+## Open Questions — RESOLVED 2026-02-27
 
-1. **Payment gateway**: PayFast vs Peach Payments — PayFast is simpler/cheaper for MVP, Peach has more flexibility. Which does client prefer?
-2. **Domain / hosting**: Where is the app deployed? (affects Google Maps API config, OAuth redirect URIs)
-3. **SOS screen**: What exactly should SOS do? (Call guide, share GPS location, alert emergency contact, all three?)
-4. **Activity categories**: Are hiking/food the only categories, or does client have a full list?
-5. **Tour code format**: Client-defined or system-generated? (e.g. "UNLOCK-2026-KLM")
-6. **Guide vs Guest roles**: Are guides managed separately? Can guides have the app too, or only admin panel?
-7. **NFC hardware**: Does client have specific NFC tags/readers in mind, or is this purely browser-native Web NFC?
-8. **Google Maps API key**: Client to provide, or are we setting up a new GCP project?
+| Question | Answer |
+|---|---|
+| Payment gateway | Agnostic scaffolding (adapter pattern) — client provides gateway details later |
+| Domain/hosting | IP-based, local VM for dev; client provides IP + SSH creds |
+| SOS | All options (guide alert, emergency contacts, live GPS link) — each toggleable by superuser |
+| Activity categories | Fully dynamic, client-managed in backend; seed script provides initial set |
+| Tour code format | Random memorable word (Overberg/nature themed) — sent via email on payment confirm |
+| Guide role | Both PWA + admin; superuser configures what guides can see per permission toggle |
+| Google Maps | New GCP project from scratch |
+| NFC hardware | TBD, scaffold Web NFC API now |
+
+## Remaining Open Question
+
+**Tour code format:** single word (e.g. "fynbos") or compound (e.g. "wild-pelican")? How many characters/words maximum?
 
 ---
 
@@ -183,11 +200,22 @@ overberg_adventures/          ← Django project
 
 ---
 
+## Developer Mode Features
+
+When `DEV_MODE=true` (only when `DEBUG=True`):
+- "Simulate Payment (Paid)" button bypasses payment gateway
+- OTP shown in UI / auto-filled (no real email needed)
+- Simple username/password login (bypass OAuth)
+- Skip payment step on booking flow
+- Notification preview without FCM
+- NFC tap simulation button
+- Visible "DEV MODE ACTIVE" banner in admin panel
+
 ## Session Log
 
 | Date | Session Summary |
 |---|---|
-| 2026-02-27 | Initial client brief received; UI reference screenshots reviewed (15 screens); README + design doc created; brainstorming phase |
+| 2026-02-27 | Initial client brief received; all 15 UI screens reviewed; README + design doc created; open questions resolved; new requirements captured (tour codes, dev mode, VM infra, payment adapter pattern) |
 
 ---
 

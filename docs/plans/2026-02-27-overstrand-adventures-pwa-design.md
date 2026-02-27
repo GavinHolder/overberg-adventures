@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-27
 **Author:** Claude (Brainstorming phase)
-**Status:** DRAFT — Awaiting client clarifications + user approval
+**Status:** DRAFT v2 — Questions answered 2026-02-27, pending final approval
 
 ---
 
@@ -390,20 +390,89 @@ Custom-built with Bootstrap 5, designed to work on phone screen:
 
 ---
 
-## 15. Open Questions
+## 15. Open Questions — RESOLVED (2026-02-27)
 
-These must be resolved before or during Phase 1:
+| # | Question | Answer |
+|---|---|---|
+| 1 | Payment gateway | **Payment-gateway agnostic scaffolding** — client to provide details later; PayFast/Peach/manual all plug in via adapter pattern |
+| 2 | Domain/hosting | **IP-based for now** — local VM (dev), client will provide IP + SSH credentials |
+| 3 | SOS behaviour | **All options, each toggleable** — guide alert, emergency contact ping, live GPS link share; superuser controls which are active |
+| 4 | Activity categories | **Fully dynamic** — client manages in backend; seed script provides initial set (hiking, food & dining, kayaking, cycling, scenic drive, whale watching, swimming, photography, cultural) |
+| 5 | Tour code format | **Random memorable word** — sent via email on payment confirmation; seed from nature/Overberg word list |
+| 6 | Google Maps | **Set up from scratch** — new GCP project to create |
+| 7 | Guide app access | **Both PWA + admin panel** — superuser has toggleable permissions per guide role (what they can see: participant health, contact details, notes, financial info etc.) |
+| 8 | Group size | TBD — scaffold for it, not required for MVP |
+| 9 | NFC hardware | TBD — client hasn't purchased yet; scaffold Web NFC API |
+| 10 | Languages | English only for MVP |
 
-1. **Payment gateway:** PayFast or Peach Payments?
-2. **Domain/hosting:** What domain? (needed for OAuth redirect URIs + Maps API key restriction)
-3. **SOS behaviour:** Alert guide only, or also send to emergency contacts + share live GPS link?
-4. **Activity categories:** Full list beyond hiking/food? (e.g. kayaking, whale watching, cycling, scenic drive)
-5. **Tour code format:** Auto-generated (e.g. `OA-2026-KM4X`) or client-defined per tour?
-6. **Guide role in app:** Can guides log into the PWA app as well as the admin panel? Different UI?
-7. **Google Maps:** Client providing GCP project, or do we set one up?
-8. **Group size:** Is there a concept of sub-groups within a tour (e.g. hiking group A vs group B)?
-9. **NFC tags:** Does client have specific NFC tag hardware already purchased?
-10. **Languages:** English only, or Afrikaans as well?
+## 15b. New Requirements (2026-02-27)
+
+### Tour Code System
+- Format: **randomly generated memorable word** (e.g. nature/Overberg themed: "fynbos", "pelican", "milkwood", "protea")
+- Can optionally be compound (e.g. "blue-fynbos" or "wild-pelican") — **to confirm: single word or multi-word?**
+- Delivery: sent via SendGrid email upon payment confirmation
+- Dev mode: "Simulate Payment" button in payment management section → triggers same flow (code generated + email sent or displayed on screen)
+
+### Developer Mode Toggle
+- Global `DEV_MODE` setting (env var + DB flag for runtime toggle without restart)
+- When ON, unlocks:
+  - **"Simulate Payment (Paid)"** button on any pending payment → auto-confirms + triggers tour code email
+  - **Bypass email OTP** — OTP shown in UI (or auto-filled) instead of requiring real email
+  - **Bypass OAuth** — simple username/password login without Google/Facebook
+  - **Skip payment step** on booking flow
+  - **Notification preview** — push notification appears in UI without going through FCM
+  - **NFC simulation** — button to simulate an NFC tap with a tag ID
+- DEV_MODE only available when `DEBUG=True` (hard safety guard)
+- Admin panel shows a visible "DEV MODE ACTIVE" banner when enabled
+
+### Infrastructure: VM Setup
+
+**Target:** Client-provided VM (IP + SSH credentials to be provided)
+
+**Stack layout (separate Docker Compose stacks in Portainer):**
+
+| Stack | Services |
+|---|---|
+| `traefik` | Traefik reverse proxy (handles routing, SSL via self-signed or Let's Encrypt) |
+| `portainer` | Portainer CE (Docker management UI) |
+| `redis` | Redis (Celery broker + cache) |
+| `app` | Django app — client deploys manually from GitHub repo |
+
+**SSH setup:**
+1. Connect with provided credentials
+2. Generate key pair on dev machine: `ssh-keygen -t ed25519`
+3. Add public key to VM `~/.ssh/authorized_keys`
+4. Configure `~/.ssh/config` on dev machine for passwordless access
+5. Disable password auth on VM SSH daemon (`PasswordAuthentication no`)
+
+**Docker Compose files:** Created as separate files per stack, committed to a `deploy/` folder in the repo.
+
+### Payment Gateway Adapter Pattern
+
+```python
+# apps/payments/adapters/base.py
+class PaymentGatewayAdapter(ABC):
+    @abstractmethod
+    def create_payment(self, booking, amount) -> PaymentSession: ...
+    @abstractmethod
+    def verify_webhook(self, request) -> WebhookResult: ...
+    @abstractmethod
+    def refund(self, payment_id, amount) -> RefundResult: ...
+
+# apps/payments/adapters/payfast.py
+class PayFastAdapter(PaymentGatewayAdapter): ...
+
+# apps/payments/adapters/peach.py
+class PeachPaymentsAdapter(PaymentGatewayAdapter): ...
+
+# apps/payments/adapters/manual.py
+class ManualPaymentAdapter(PaymentGatewayAdapter): ...
+
+# apps/payments/adapters/dev.py  (DEV_MODE only)
+class DevSimulateAdapter(PaymentGatewayAdapter): ...
+```
+
+Active adapter configured via `PAYMENT_GATEWAY=payfast|peach|manual` env var.
 
 ---
 
