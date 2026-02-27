@@ -16,10 +16,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN python manage.py collectstatic --noinput --settings=overberg_adventures.settings
+RUN addgroup --system app && adduser --system --ingroup app app
+
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
+USER app
 
 EXPOSE 8000
 
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["gunicorn", "overberg_adventures.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
      "--workers", "4", \

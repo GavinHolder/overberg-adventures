@@ -5,8 +5,18 @@ api:
 entryPoints:
   web:
     address: ":80"
+    # Uncomment when domain + Let's Encrypt is configured:
+    # http:
+    #   redirections:
+    #     entryPoint:
+    #       to: websecure
+    #       scheme: https
   websecure:
     address: ":443"
+    # Uncomment when Let's Encrypt is configured:
+    # http:
+    #   tls:
+    #     certResolver: letsencrypt
 
 providers:
   docker:
@@ -15,3 +25,12 @@ providers:
 
 log:
   level: INFO
+
+# Uncomment and configure when adding a domain + Let's Encrypt:
+# certificatesResolvers:
+#   letsencrypt:
+#     acme:
+#       email: admin@overstrandadventures.co.za
+#       storage: /certs/acme.json
+#       httpChallenge:
+#         entryPoint: web

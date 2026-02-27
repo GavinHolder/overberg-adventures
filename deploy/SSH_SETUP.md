@@ -147,7 +147,7 @@ cd ~/overberg-adventures/deploy/traefik
 docker compose up -d
 ```
 
-Verify Traefik dashboard is accessible at `http://YOUR_VM_IP:8080`.
+Traefik dashboard is bound to localhost only. Access it via SSH tunnel (see "Accessing Services via SSH Tunnel" below).
 
 ### Stack 2: Portainer
 
@@ -156,7 +156,7 @@ cd ~/overberg-adventures/deploy/portainer
 docker compose up -d
 ```
 
-Verify Portainer is accessible at `http://YOUR_VM_IP:9000`.
+Portainer is bound to localhost only. Access it via SSH tunnel (see "Accessing Services via SSH Tunnel" below).
 Create your admin account on first access (do this immediately — Portainer times out the initial setup).
 
 ### Stack 3: Redis
@@ -206,3 +206,21 @@ All containers should appear under the `Containers` section.
 **Portainer can't connect to Docker:** Ensure `/var/run/docker.sock` is accessible. The VM user must be in the `docker` group.
 
 **Redis healthcheck failing:** Give it 30 seconds on first start. Check logs with `docker logs redis`.
+
+---
+
+## Accessing Services via SSH Tunnel
+
+Since Portainer (9000) and Traefik dashboard (8080) are bound to localhost only, they are not directly reachable from the internet. Access them by forwarding the port over SSH:
+
+```bash
+# Portainer
+ssh -L 9000:localhost:9000 oa-vm
+# Then open: http://localhost:9000
+
+# Traefik dashboard
+ssh -L 8080:localhost:8080 oa-vm
+# Then open: http://localhost:8080
+```
+
+Keep the SSH session open while using the UI. Open a second terminal for other VM commands.

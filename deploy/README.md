@@ -47,6 +47,18 @@ Detailed deployment steps: see `deploy/SSH_SETUP.md`.
 
 ---
 
+## Migrations and Static Files
+
+The app container runs `entrypoint.sh` on startup, which automatically executes:
+
+1. `python manage.py migrate --noinput` — applies any pending database migrations
+2. `python manage.py collectstatic --noinput` — collects static files
+3. Hands off to `gunicorn` to start the application
+
+No manual migration step is needed after deploying or redeploying the app stack.
+
+---
+
 ## App Stack Deployment (Client Responsibility)
 
 The app stack (`deploy/app/docker-compose.yml`) is deployed and managed by the client using the Portainer UI. The workflow is:
