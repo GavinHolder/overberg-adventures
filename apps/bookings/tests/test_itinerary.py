@@ -35,12 +35,12 @@ def _make_category():
 class ItineraryEmptyTest(TestCase):
     def test_no_bookings_shows_empty_state(self):
         self.client.force_login(_make_user())
-        resp = self.client.get('/app/itinerary/')
+        resp = self.client.get(reverse('bookings:itinerary_home'))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "haven't joined")
 
     def test_unauthenticated_redirects(self):
-        resp = self.client.get('/app/itinerary/')
+        resp = self.client.get(reverse('bookings:itinerary_home'))
         self.assertIn('/accounts/login/', resp['Location'])
 
 
@@ -55,23 +55,23 @@ class ItineraryDetailTest(TestCase):
 
     def test_shows_tour_name(self):
         self.client.force_login(self.guest)
-        resp = self.client.get(f'/app/itinerary/{self.booking.id}/')
+        resp = self.client.get(reverse('bookings:itinerary_detail', args=[self.booking.id]))
         self.assertContains(resp, 'Kogelberg Trek')
 
     def test_shows_location(self):
         self.client.force_login(self.guest)
-        resp = self.client.get(f'/app/itinerary/{self.booking.id}/')
+        resp = self.client.get(reverse('bookings:itinerary_detail', args=[self.booking.id]))
         self.assertContains(resp, 'Kleinmond')
 
     def test_shows_rsvp_button_when_invited(self):
         self.client.force_login(self.guest)
-        resp = self.client.get(f'/app/itinerary/{self.booking.id}/')
+        resp = self.client.get(reverse('bookings:itinerary_detail', args=[self.booking.id]))
         self.assertContains(resp, 'RSVP')
 
     def test_other_user_cannot_access(self):
         other = _make_user('other@g.com')
         self.client.force_login(other)
-        resp = self.client.get(f'/app/itinerary/{self.booking.id}/')
+        resp = self.client.get(reverse('bookings:itinerary_detail', args=[self.booking.id]))
         self.assertEqual(resp.status_code, 404)
 
     def test_shows_itinerary_items(self):
@@ -81,15 +81,15 @@ class ItineraryDetailTest(TestCase):
             start_time=timezone.now().time(), duration_minutes=120,
         )
         self.client.force_login(self.guest)
-        resp = self.client.get(f'/app/itinerary/{self.booking.id}/')
+        resp = self.client.get(reverse('bookings:itinerary_detail', args=[self.booking.id]))
         self.assertContains(resp, 'Morning Hike')
 
     def test_rsvp_post_updates_status(self):
         self.client.force_login(self.guest)
-        resp = self.client.post(f'/app/itinerary/{self.booking.id}/rsvp/')
+        resp = self.client.post(reverse('bookings:rsvp_action', args=[self.booking.id]))
         self.booking.refresh_from_db()
         self.assertEqual(self.booking.status, Booking.Status.RSVP_PENDING)
-        self.assertRedirects(resp, f'/app/itinerary/{self.booking.id}/')
+        self.assertRedirects(resp, reverse('bookings:itinerary_detail', args=[self.booking.id]))
 
     def test_shows_rsvp_pending_banner(self):
         tour2 = _make_tour(self.guide, code='pelican')

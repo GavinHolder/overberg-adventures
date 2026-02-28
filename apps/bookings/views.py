@@ -30,7 +30,7 @@ def itinerary_detail(request, booking_id):
     return render(request, 'app/itinerary.html', {
         'booking': booking,
         'tour': booking.tour,
-        'items_by_day': items_by_day,
+        'items_by_day': dict(sorted(items_by_day.items())),
     })
 
 

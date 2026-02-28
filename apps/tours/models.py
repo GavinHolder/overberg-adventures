@@ -1,5 +1,6 @@
 from django.db import models, transaction
 from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator
 from django.utils import timezone
 
 User = get_user_model()
@@ -9,7 +10,11 @@ class ActivityCategory(models.Model):
     """Tour activity categories — fully dynamic, client manages in backend."""
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=50, default='geo-alt')  # Bootstrap Icons name
-    colour = models.CharField(max_length=7, default='#F97316')  # hex colour
+    colour = models.CharField(
+        max_length=7,
+        default='#F97316',
+        validators=[RegexValidator(r'^#[0-9A-Fa-f]{6}$', 'Must be a valid hex colour, e.g. #F97316')],
+    )
     is_active = models.BooleanField(default=True)
     order = models.PositiveSmallIntegerField(default=0)
 
