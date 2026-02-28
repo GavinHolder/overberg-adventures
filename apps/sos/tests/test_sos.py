@@ -69,3 +69,33 @@ class SOSViewTest(TestCase):
         SosConfig.objects.create(show_gps_share=True)
         self.client.force_login(_make_user())
         self.assertContains(self.client.get(reverse('sos:sos')), 'Generate GPS Link')
+
+    def test_shows_guide_whatsapp_card_when_booking_has_guide(self):
+        """Alert Your Guide card shown when active booking has guide with phone_whatsapp"""
+        from django.utils import timezone
+        from apps.tours.models import Tour, TourCodeWord
+        from apps.bookings.models import Booking
+        User = get_user_model()
+        # Create guide with whatsapp number
+        guide = User.objects.create_user(username='guide@g.com', email='guide@g.com', password='x', is_active=True)
+        UserProfile.objects.filter(user=guide).update(first_name='Tyrone', phone_whatsapp='27791234567', indemnity_accepted=True)
+        # Create tour with guide
+        TourCodeWord.objects.get_or_create(word='testsos', defaults={'is_used': True})
+        tour = Tour.objects.create(
+            name='SOS Test Tour', tour_code='testsos',
+            start_datetime=timezone.now(), location_name='Somewhere',
+            capacity=10, status=Tour.Status.ACTIVE, guide=guide,
+        )
+        user = _make_user('guest@g.com')
+        Booking.objects.create(user=user, tour=tour, status=Booking.Status.CONFIRMED)
+        SosConfig.objects.create(show_whatsapp_sos=True)
+        self.client.force_login(user)
+        resp = self.client.get(reverse('sos:sos'))
+        self.assertContains(resp, 'Alert Your Guide')
+
+    def test_hides_guide_whatsapp_card_when_show_whatsapp_sos_false(self):
+        """Alert Your Guide card hidden when show_whatsapp_sos=False even with active booking"""
+        SosConfig.objects.create(show_whatsapp_sos=False)
+        self.client.force_login(_make_user())
+        resp = self.client.get(reverse('sos:sos'))
+        self.assertNotContains(resp, 'Alert Your Guide')

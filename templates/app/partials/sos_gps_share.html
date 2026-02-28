@@ -31,7 +31,8 @@ function gpsShare() {
         () => {
           this.loading = false;
           this.error = 'Could not get location. Check browser permissions.';
-        }
+        },
+        { timeout: 10000, maximumAge: 0 }
       );
     }
   };

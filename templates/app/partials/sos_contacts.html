@@ -10,7 +10,7 @@
       <div class="text-muted small">{{ contact.phone }}</div>
     </div>
     <a href="tel:{{ contact.phone }}" class="sos-contact-btn"
-       onclick="return confirm('Call {{ contact.name }}?')">
+       onclick='return confirm("Call {{ contact.name|escapejs }}?")'>
       <i class="bi bi-telephone-fill"></i>
     </a>
   </div>

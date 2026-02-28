@@ -19,7 +19,7 @@ function sosGuide() {
   return {
     sending: false,
     error: '',
-    guidePhone: '{{ guide_whatsapp }}',
+    guidePhone: '{{ guide_whatsapp|escapejs }}',
     tourName: '{{ active_booking.tour.name|escapejs }}',
     send() {
       this.error = '';
@@ -42,7 +42,8 @@ function sosGuide() {
           this.error = 'Location unavailable. Message sent without GPS.';
           const msg = encodeURIComponent('🚨 SOS — ' + this.tourName + '\nI need help! Location unavailable.');
           window.open('https://wa.me/' + this.guidePhone + '?text=' + msg, '_blank');
-        }
+        },
+        { timeout: 10000, maximumAge: 0 }
       );
     }
   };
