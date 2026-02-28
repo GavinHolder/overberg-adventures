@@ -7,6 +7,7 @@ from django.conf import settings
 from .decorators import guide_required, staff_required
 from .forms import TourForm
 from apps.tours.models import Tour, ItineraryItem, ActivityCategory
+from dashboard.models import TourPhoto
 
 
 def _dev_mode():
@@ -488,11 +489,15 @@ def tour_detail(request, pk):
     # Sort the dict by day number so the template iterates day 1, 2, 3…
     items_by_day = dict(sorted(items_by_day.items()))
 
+    # Load photos ordered newest-first for the photos tab and badge count
+    photos = TourPhoto.objects.filter(tour=tour)
+
     return render(request, 'admin_panel/tours/detail.html', {
         'tour': tour,
         'active_tab': active_tab,
         'bookings': bookings,
         'items_by_day': items_by_day,
+        'photos': photos,
         'dev_mode': _dev_mode(),
     })
 
@@ -923,3 +928,98 @@ def itinerary_reorder(request, tour_pk):
     for entry in data:
         ItineraryItem.objects.filter(pk=entry['id'], tour=tour).update(order=entry['order'])
     return JsonResponse({'ok': True})
+
+
+# ---------------------------------------------------------------------------
+# Photo gallery views (Task 32)
+# ---------------------------------------------------------------------------
+
+@guide_required
+def photo_upload(request, tour_pk):
+    """
+    Guide dashboard: Upload a photo to a tour's gallery.
+
+    Accepts multipart POST with a 'photo' file field.
+    Returns:
+    - HTMX request: the new photo thumbnail partial for inline insertion
+    - Normal POST: redirect to tour detail photos tab
+    - No file: 400 Bad Request
+
+    Args:
+        tour_pk: Tour PK (used for ownership check and photo association)
+
+    ASSUMPTIONS:
+    - 'photo' key is present in request.FILES for a valid upload
+    - Pillow is installed (ImageField validates the file is a real image)
+
+    FAILURE MODES:
+    - Invalid image format: Django's ImageField raises ValidationError
+    - No photo key: returns 400 immediately
+    """
+    from django.http import HttpResponse
+    tour = _get_tour_for_guide(request, tour_pk)
+
+    if request.method != 'POST':
+        # Only POST is accepted; return 405 for any other method
+        return HttpResponse(status=405)
+
+    photo_file = request.FILES.get('photo')
+    if not photo_file:
+        # No file in request — return 400 rather than silently doing nothing
+        return HttpResponse(status=400)
+
+    photo = TourPhoto.objects.create(
+        tour=tour,
+        uploaded_by=request.user,
+        photo=photo_file,
+        caption=request.POST.get('caption', ''),
+    )
+
+    if request.headers.get('HX-Request'):
+        # HTMX: return just the thumbnail partial so it's inserted into the grid
+        return render(request, 'admin_panel/tours/partials/photo_thumb.html', {'photo': photo})
+
+    # Normal POST: redirect to photos tab on tour detail
+    return redirect(
+        reverse('dashboard:tour_detail', args=[tour_pk]) + '?tab=photos'
+    )
+
+
+@guide_required
+def photo_delete(request, pk):
+    """
+    Guide dashboard: Delete a tour photo.
+
+    Accepts POST or DELETE (HTMX sends DELETE).
+    Attempts to delete the physical file from MEDIA_ROOT before removing the DB record.
+    Returns empty 200 — HTMX swaps the thumbnail element out of the grid.
+
+    Args:
+        pk: TourPhoto primary key
+
+    FAILURE MODES:
+    - File already deleted from disk: FileNotFoundError is caught silently
+    - Photo not found in DB: 404
+    - Ownership violation (wrong guide): 403 from _get_tour_for_guide
+    """
+    import os
+    from django.shortcuts import get_object_or_404
+    from django.http import HttpResponse
+    photo = get_object_or_404(TourPhoto, pk=pk)
+
+    # Enforce tour ownership via the same helper used throughout the dashboard
+    _get_tour_for_guide(request, photo.tour_id)
+
+    if request.method in ('POST', 'DELETE'):
+        # Delete the physical file to prevent orphaned media files
+        if photo.photo and hasattr(photo.photo, 'path'):
+            try:
+                os.remove(photo.photo.path)
+            except FileNotFoundError:
+                pass  # file was already removed — continue with DB cleanup
+
+        photo.delete()
+        return HttpResponse('')  # empty response: HTMX swaps element out
+
+    # Reject GET, PUT, PATCH etc. — this endpoint is write-only
+    return HttpResponse(status=405)

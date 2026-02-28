@@ -6,6 +6,20 @@ from datetime import timedelta
 from apps.accounts.models import UserProfile
 from apps.tours.models import Tour, ItineraryItem, ActivityCategory
 from datetime import time as dtime
+from django.core.files.uploadedfile import SimpleUploadedFile
+
+
+def make_fake_image(filename='test.jpg'):
+    """
+    Create a minimal JPEG file that passes ImageField validation.
+    Uses the JPEG magic bytes header — enough for Django's image validator.
+    """
+    # Minimal valid JPEG: SOI marker + JFIF APP0 marker + some padding
+    jpeg_bytes = (
+        b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00'
+        b'\xff\xd9'  # EOI marker
+    )
+    return SimpleUploadedFile(filename, jpeg_bytes, content_type='image/jpeg')
 
 User = get_user_model()
 
@@ -750,4 +764,80 @@ class QRCodeTest(TestCase):
         other = make_user('other@qr.com', UserProfile.Role.GUIDE)
         other_tour = make_tour(other, 'Other QR Tour')
         resp = self.client.get(reverse('dashboard:tour_qr', args=[other_tour.pk]))
+        self.assertEqual(resp.status_code, 403)
+
+
+class PhotoGalleryTest(TestCase):
+    """
+    Tests for the photo gallery feature (Task 32).
+    Covers: TourPhoto model, upload, delete, photos tab rendering.
+    """
+
+    def setUp(self):
+        """Create a guide, their tour, and log in."""
+        self.guide = make_user('guide@photos.com', UserProfile.Role.GUIDE)
+        self.client.force_login(self.guide)
+        self.tour = make_tour(self.guide)
+
+    def test_photo_upload_creates_record(self):
+        """POST to photo_upload creates a TourPhoto record in the DB."""
+        from dashboard.models import TourPhoto
+        resp = self.client.post(
+            reverse('dashboard:photo_upload', args=[self.tour.pk]),
+            {'photo': make_fake_image()},
+        )
+        self.assertEqual(TourPhoto.objects.filter(tour=self.tour).count(), 1)
+
+    def test_photo_upload_sets_uploader(self):
+        """Uploaded photo is associated with the logged-in guide."""
+        from dashboard.models import TourPhoto
+        self.client.post(
+            reverse('dashboard:photo_upload', args=[self.tour.pk]),
+            {'photo': make_fake_image('upload2.jpg')},
+        )
+        photo = TourPhoto.objects.first()
+        self.assertEqual(photo.uploaded_by, self.guide)
+
+    def test_photo_delete_removes_record(self):
+        """DELETE request removes the TourPhoto record."""
+        from dashboard.models import TourPhoto
+        photo = TourPhoto.objects.create(
+            tour=self.tour,
+            uploaded_by=self.guide,
+            photo=make_fake_image('del.jpg'),
+        )
+        resp = self.client.delete(reverse('dashboard:photo_delete', args=[photo.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(TourPhoto.objects.filter(pk=photo.pk).exists())
+
+    def test_photos_tab_renders(self):
+        """The photos tab on tour detail renders without errors."""
+        resp = self.client.get(
+            reverse('dashboard:tour_detail', args=[self.tour.pk]),
+            {'tab': 'photos'}
+        )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_photos_tab_shows_upload_count(self):
+        """Photos tab shows how many photos are uploaded."""
+        from dashboard.models import TourPhoto
+        TourPhoto.objects.create(
+            tour=self.tour,
+            uploaded_by=self.guide,
+            photo=make_fake_image('count.jpg'),
+        )
+        resp = self.client.get(
+            reverse('dashboard:tour_detail', args=[self.tour.pk]),
+            {'tab': 'photos'}
+        )
+        self.assertContains(resp, '1 photo')
+
+    def test_guide_cannot_upload_to_other_tour(self):
+        """A guide gets 403 when uploading to another guide's tour."""
+        other = make_user('other@photos.com', UserProfile.Role.GUIDE)
+        other_tour = make_tour(other)
+        resp = self.client.post(
+            reverse('dashboard:photo_upload', args=[other_tour.pk]),
+            {'photo': make_fake_image('hack.jpg')},
+        )
         self.assertEqual(resp.status_code, 403)

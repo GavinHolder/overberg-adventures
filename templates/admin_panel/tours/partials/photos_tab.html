@@ -1,0 +1,115 @@
+{% comment %}
+Photos tab partial — tour photo gallery with upload and delete.
+Context: tour, photos (QuerySet of TourPhoto ordered by -uploaded_at)
+{% endcomment %}
+
+<div class="d-flex align-items-center mb-3">
+  {# Photo count summary — pluralise handles "1 photo" vs "2 photos" #}
+  <span class="text-muted small flex-grow-1">
+    {{ photos.count }} photo{{ photos.count|pluralize }}
+  </span>
+
+  {# Upload button — triggers hidden file input; JS posts the file via fetch #}
+  <label class="btn btn-sm btn-warning fw-bold" for="photo-upload-input">
+    <i class="bi bi-camera me-1"></i>Upload
+  </label>
+  <input id="photo-upload-input"
+         type="file"
+         name="photo"
+         accept="image/*"
+         multiple
+         style="display:none;"
+         onchange="uploadPhotos(this, {{ tour.pk }})">
+</div>
+
+<div class="photo-grid" id="photo-grid">
+  {% for photo in photos %}
+  <div id="photo-{{ photo.pk }}" style="position:relative;">
+    {# Thumbnail — clicking opens the lightbox modal with the full-size image #}
+    <img src="{{ photo.photo.url }}"
+         alt="{{ photo.caption|default:'Tour photo' }}"
+         class="photo-thumb"
+         data-bs-toggle="modal"
+         data-bs-target="#lightbox-modal"
+         data-src="{{ photo.photo.url }}"
+         onclick="document.getElementById('lightbox-img').src = this.dataset.src;">
+
+    {# Delete button overlaid on the thumbnail; HTMX removes the element on success #}
+    <button class="btn btn-sm btn-danger"
+            style="position:absolute;top:4px;right:4px;padding:2px 6px;font-size:11px;"
+            hx-delete="{% url 'dashboard:photo_delete' photo.pk %}"
+            hx-confirm="Delete this photo?"
+            hx-target="#photo-{{ photo.pk }}"
+            hx-swap="outerHTML swap:0.2s">
+      <i class="bi bi-x"></i>
+    </button>
+  </div>
+  {% empty %}
+  {# Empty state shown when no photos have been uploaded yet #}
+  <div class="col-12 text-center text-muted py-4" id="empty-photos">
+    <i class="bi bi-camera fs-2 d-block mb-2 opacity-25"></i>
+    <p class="mb-0">No photos yet. Upload some memories!</p>
+  </div>
+  {% endfor %}
+</div>
+
+{# Bootstrap lightbox modal for full-size photo view #}
+<div class="modal fade" id="lightbox-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen-sm-down modal-lg modal-dialog-centered">
+    <div class="modal-content bg-dark border-0">
+      <div class="modal-header border-0 pb-0">
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center p-2">
+        <img id="lightbox-img" src="" alt="Full size photo" class="img-fluid rounded">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/**
+ * Upload one or more photos via fetch POST.
+ * Iterates through the selected files and uploads each one individually.
+ * On success, prepends the returned thumbnail HTML to the photo grid.
+ *
+ * @param {HTMLInputElement} input - The file input element
+ * @param {number} tourPk - Tour primary key for the upload URL
+ */
+function uploadPhotos(input, tourPk) {
+  // Extract CSRF token from cookie for Django's CSRF protection
+  var csrfToken = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+  var grid = document.getElementById('photo-grid');
+  var emptyMsg = document.getElementById('empty-photos');
+
+  Array.from(input.files).forEach(function(file) {
+    var formData = new FormData();
+    formData.append('photo', file);
+
+    fetch('/guide/tours/' + tourPk + '/photos/upload/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrfToken,
+        'HX-Request': 'true',  // signal the view to return a partial
+      },
+      body: formData,
+    })
+    .then(function(resp) { return resp.text(); })
+    .then(function(html) {
+      // Remove the empty state message on first upload
+      if (emptyMsg) {
+        emptyMsg.remove();
+        emptyMsg = null;  // prevent double-removal on subsequent uploads
+      }
+      // Insert the new thumbnail at the beginning of the grid
+      grid.insertAdjacentHTML('afterbegin', html);
+    });
+  });
+
+  // Reset input so the same file can be re-selected if needed
+  input.value = '';
+}
+</script>

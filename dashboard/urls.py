@@ -23,4 +23,6 @@ urlpatterns = [
     path('guests/', views.guests_list, name='guests_list'),
     path('guides/', views.guides_list, name='guides_list'),
     path('guides/<int:pk>/edit/', views.guide_edit, name='guide_edit'),
+    path('tours/<int:tour_pk>/photos/upload/', views.photo_upload, name='photo_upload'),
+    path('photos/<int:pk>/delete/', views.photo_delete, name='photo_delete'),
 ]

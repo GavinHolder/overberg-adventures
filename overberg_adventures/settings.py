@@ -18,7 +18,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # DEV_MODE is ONLY active when DEBUG is also True
 DEV_MODE = config('DEV_MODE', default=False, cast=bool) and DEBUG
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = ['*'] if DEBUG else config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
 SITE_ID = config('SITE_ID', default=1, cast=int)
 

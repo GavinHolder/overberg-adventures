@@ -38,6 +38,17 @@
     <a class="nav-link {% if active_tab == 'overview' %}active{% endif %}"
        href="?tab=overview">Overview</a>
   </li>
+  <li class="nav-item">
+    {# Photos tab: shows gallery and upload UI #}
+    <a class="nav-link {% if active_tab == 'photos' %}active{% endif %}"
+       href="?tab=photos">
+      Photos
+      {% if photos.count %}
+        {# Badge gives guides a quick count of uploaded photos at a glance #}
+        <span class="badge bg-secondary ms-1" style="font-size:10px;">{{ photos.count }}</span>
+      {% endif %}
+    </a>
+  </li>
 </ul>
 
 {# ── Tab content: delegate to partials to keep this file thin ── #}
@@ -46,6 +57,9 @@
   {% include 'admin_panel/tours/partials/itinerary_tab.html' %}
 {% elif active_tab == 'guests' %}
   {% include 'admin_panel/tours/partials/guests_tab.html' %}
+{% elif active_tab == 'photos' %}
+  {# Photos tab: gallery with upload and delete #}
+  {% include 'admin_panel/tours/partials/photos_tab.html' %}
 {% else %}
   {# 'overview' tab is the fallback for any unrecognised ?tab= value #}
   {% include 'admin_panel/tours/partials/overview_tab.html' %}

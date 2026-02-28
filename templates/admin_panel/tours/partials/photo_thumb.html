@@ -1,0 +1,24 @@
+{% comment %}
+Single photo thumbnail partial — returned by photo_upload for HTMX insertion.
+Context: photo (TourPhoto instance)
+{% endcomment %}
+<div id="photo-{{ photo.pk }}" style="position:relative;">
+  {# Thumbnail image — clicking opens the lightbox (defined in photos_tab.html) #}
+  <img src="{{ photo.photo.url }}"
+       alt="{{ photo.caption|default:'Tour photo' }}"
+       class="photo-thumb"
+       data-bs-toggle="modal"
+       data-bs-target="#lightbox-modal"
+       data-src="{{ photo.photo.url }}"
+       onclick="document.getElementById('lightbox-img').src = this.dataset.src;">
+
+  {# Delete button overlaid on the thumbnail; HTMX removes the element on success #}
+  <button class="btn btn-sm btn-danger"
+          style="position:absolute;top:4px;right:4px;padding:2px 6px;font-size:11px;"
+          hx-delete="{% url 'dashboard:photo_delete' photo.pk %}"
+          hx-confirm="Delete this photo?"
+          hx-target="#photo-{{ photo.pk }}"
+          hx-swap="outerHTML swap:0.2s">
+    <i class="bi bi-x"></i>
+  </button>
+</div>

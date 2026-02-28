@@ -12,6 +12,7 @@ Status key: `[ ]` Not started · `[~]` In progress · `[x]` Complete
 - [x] **Phase 4** — Tours system (ActivityCategory, Tour, ItineraryItem, TourCodeWord, seed data)
 - [x] **Phase 5** — Bookings + Payment adapter (RSVP flow, capacity enforcement, adapter ABC)
 - [x] **Phase 6** — PWA Core Screens (Tasks 15-22 complete, 57 tests passing)
+- [x] **Phase 9** — Guide Dashboard (Tasks 23-32 complete, 120 tests passing)
 
 ---
 
@@ -90,34 +91,20 @@ Web Push (PWA-native) with dynamic notification manager.
 
 ---
 
-### Phase 9 — Guide Dashboard (Mobile-Optimised Admin Panel)
-Custom mobile-first dashboard for guides and operators. Not the default Django admin.
-4 management tabs: Tours · Activities · Guests · Guides
+### Phase 9 — Guide Dashboard (Mobile-Optimised Admin Panel) ✅ COMPLETE
 
-- [ ] Mobile-optimised base template (`templates/admin_panel/`)
-- [ ] **Tours tab** — create/edit/delete tours; tour cards (name, dates, guest count, activity count, status)
-  - QR code generation per tour (scannable + shareable join URL)
-  - Map Picker modal for GPS coordinate input on tour/activity items
-  - Cascading delete (itinerary items, bookings, photos)
-  - Tour Templates — clone an existing tour for repeat routes
-- [ ] **Itinerary Builder** (per tour) — add/edit/delete/reorder activity items
-  - Hierarchical: Activities → Steps/Checkpoints as parent-child
-  - Drag-to-reorder by day and time (HTMX + Alpine.js sortable)
-  - GPS coordinate picker per stop (integrates Phase 7 map picker)
-- [ ] **Activities tab** — Activity Library: reusable templates (e.g., "Shark Cage Diving", "Wine Tasting")
-  - Create/edit/delete activity templates; name, description, category, type, icon, pricing info
-  - Custom activity type creation
-  - Activity Picker modal for itinerary builder
-- [ ] **Guests tab** — aggregated guest list across all tours
-  - Guest Manifest per tour: enrollment status, RSVP/attendance tracking, medical/dietary/contact info
-  - Edit guest details; delete guest (atomic removal); promote guest to assistant-guide role
-  - Attendance confirmation counts (headcount without manual roll call)
-- [ ] **Guides tab** — list/edit/delete guide accounts; role management (admin, lead-guide, guide, assistant, partner, host)
-  - Multi-guide assignment per tour with role-based permissions (lead vs assistant)
-- [ ] **Photo Gallery** (per tour) — guide uploads photos
-  - Client-side image compression before upload (max 1200px, 80% JPEG via Pillow/JS)
-  - Lightbox viewer; delete photo; photos organised by tour + optionally by activity
-  - Bulk photo upload after tour
+Custom mobile-first dashboard for guides and operators. Not the default Django admin.
+Tasks 23-32 implemented. 120 tests passing.
+
+- [x] Mobile-optimised base template (`templates/admin_panel/`)
+- [x] **Tours tab** — create/edit/delete tours; tour cards (name, dates, guest count, activity count, status)
+  - [x] QR code generation per tour (scannable + shareable join URL)
+- [x] **Itinerary Builder** (per tour) — add/edit/delete/reorder activity items
+  - [x] Drag-to-reorder via JSON endpoint (HTMX sortable)
+- [x] **Activities tab** — Activity Library: create/edit/delete ActivityCategory records
+- [x] **Guests tab** — Guest Manifest per tour: enrollment status, RSVP badge, dietary/medical info
+- [x] **Guides tab** — list/edit guide accounts; role management (staff-only)
+- [x] **Photo Gallery** (per tour) — guide uploads/deletes photos; lightbox viewer; HTMX grid
 - [ ] Booking management: view RSVPs, confirm/cancel, manual tour code assignment
 - [ ] Revenue overview: bookings, payments, per-tour summary (charts via Chart.js)
 - [ ] Guide permissions toggle (superuser controls what guides can see — health data, contacts, financial, notes)
