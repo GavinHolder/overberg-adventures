@@ -1,2 +1,40 @@
 {% extends 'base_app.html' %}
-{% block content %}<div class="p-4">Map stub</div>{% endblock %}
+{% block title %}Map{% endblock %}
+{% block main_class %}map-page{% endblock %}
+
+{% block content %}
+<div id="map-container" class="map-fullscreen">
+  <div id="map" class="w-100 h-100"></div>
+  {% if booking %}
+  <a href="{% url 'bookings:itinerary_detail' booking.id %}" class="view-itinerary-btn">
+    <i class="bi bi-chevron-up me-2"></i>VIEW ITINERARY
+  </a>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if google_maps_api_key and tour %}
+<script>
+function initMap() {
+  const map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: {{ tour.location_lat|default:"-34.4" }}, lng: {{ tour.location_lng|default:"19.2" }} },
+    zoom: 13, mapTypeId: 'satellite',
+    disableDefaultUI: true, zoomControl: true,
+  });
+}
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key|escapejs }}&callback=initMap" async defer></script>
+{% else %}
+<script>
+(function() {
+  const el = document.getElementById('map');
+  el.style.background = 'linear-gradient(180deg, #2d4a2d, #1a3a2a)';
+  const msg = document.createElement('p');
+  msg.style.cssText = 'color:rgba(255,255,255,0.4);text-align:center;padding-top:40vh;font-size:14px;margin:0';
+  msg.textContent = 'Interactive map coming in Phase 7';
+  el.appendChild(msg);
+}());
+</script>
+{% endif %}
+{% endblock %}
