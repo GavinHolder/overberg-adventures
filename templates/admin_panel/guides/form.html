@@ -1,0 +1,55 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Edit Guide{% endblock %}
+{% block tab_guides %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+  <a href="{% url 'dashboard:guides_list' %}" class="btn btn-sm btn-link ps-0 text-muted">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  <h6 class="mb-0 fw-bold flex-grow-1">Edit {{ profile.full_name }}</h6>
+</div>
+
+{# Read-only info card — email cannot be changed here, only via Django admin #}
+<div class="inline-form-card mb-3" style="border-top-color:#1a3a2a;">
+  <div class="small text-muted mb-1">Account email (read-only)</div>
+  <div class="fw-semibold">{{ profile.user.email }}</div>
+</div>
+
+<div class="inline-form-card">
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="mb-3">
+      <label class="form-label small fw-bold" for="{{ field.id_for_label }}">
+        {{ field.label }}
+      </label>
+      {{ field }}
+      {% if field.errors %}
+        <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="btn btn-warning fw-bold flex-fill">Save Changes</button>
+      <a href="{% url 'dashboard:guides_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/** Apply Bootstrap form control classes to raw Django widget output. */
+document.querySelectorAll(
+  '.inline-form-card input:not([type=checkbox]),' +
+  '.inline-form-card textarea'
+).forEach(function(el) { el.classList.add('form-control'); });
+document.querySelectorAll('.inline-form-card select').forEach(function(el) {
+  el.classList.add('form-select');
+});
+document.querySelectorAll('.inline-form-card input[type=checkbox]').forEach(function(el) {
+  el.classList.add('form-check-input');
+});
+</script>
+{% endblock %}

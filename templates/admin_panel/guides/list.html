@@ -1,4 +1,57 @@
 {% extends 'admin_panel/base.html' %}
 {% block title %}Guides{% endblock %}
 {% block tab_guides %}active{% endblock %}
-{% block content %}<p class="text-muted text-center py-4">Guides tab coming soon.</p>{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+  <h6 class="mb-0 fw-bold flex-grow-1">Guide &amp; Operator Accounts</h6>
+</div>
+
+<p class="text-muted small mb-3">
+  Manage guide and operator roles. To add a new guide, create their account
+  via Django admin then assign a role here.
+</p>
+
+{% for profile in profiles %}
+<div class="guest-row">
+  {# Avatar using dark green (guide colour) instead of the orange used for guests #}
+  <div class="guest-avatar" style="background:#1a3a2a;">
+    {{ profile.initials|upper }}
+  </div>
+
+  <div class="flex-grow-1" style="min-width:0;">
+    <div class="fw-semibold text-truncate" style="font-size:14px;">
+      {{ profile.full_name }}
+    </div>
+    <div class="text-muted text-truncate" style="font-size:11px;">
+      {{ profile.user.email }}
+    </div>
+    {% if profile.phone_whatsapp %}
+    <div class="text-muted" style="font-size:11px;">
+      <i class="bi bi-whatsapp me-1 text-success"></i>{{ profile.phone_whatsapp }}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="d-flex align-items-center gap-2 flex-shrink-0">
+    {# Role badge — colour-coded to distinguish admin from guide from operator #}
+    <span class="badge rounded-pill
+      {% if profile.role == 'ADMIN' %}bg-danger
+      {% elif profile.role == 'OPERATOR' %}bg-primary
+      {% else %}bg-success{% endif %}"
+      style="font-size:10px;">
+      {{ profile.get_role_display }}
+    </span>
+    <a href="{% url 'dashboard:guide_edit' profile.pk %}"
+       class="btn btn-sm btn-link text-warning p-1">
+      <i class="bi bi-pencil"></i>
+    </a>
+  </div>
+</div>
+{% empty %}
+<div class="text-center text-muted py-5">
+  <i class="bi bi-person-badge fs-2 d-block mb-2 opacity-25"></i>
+  <p class="mb-0">No guides yet. Assign the Guide role to a user account.</p>
+</div>
+{% endfor %}
+{% endblock %}

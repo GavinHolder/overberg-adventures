@@ -636,3 +636,76 @@ class ActivityLibraryTest(TestCase):
         })
         self.assertFalse(ActivityCategory.objects.filter(name='Bad Colour').exists())
         self.assertEqual(resp.status_code, 200)  # form re-rendered
+
+
+class GuidesTabTest(TestCase):
+    """
+    Tests for the Guides tab (Task 30).
+    Covers: list displays guide/operator/admin profiles, excludes guests,
+    staff-only restriction, role editing.
+    """
+
+    def setUp(self):
+        """Create a staff user (required for guides tab access)."""
+        self.admin = make_user('admin@guides.com', is_staff=True)
+        self.client.force_login(self.admin)
+
+    def test_guides_list_shows_guide_users(self):
+        """Guide-role users appear in the guides list."""
+        guide = make_user('g1@guides.com', UserProfile.Role.GUIDE)
+        guide.profile.first_name = 'Bob'
+        guide.profile.save()
+        resp = self.client.get(reverse('dashboard:guides_list'))
+        self.assertContains(resp, 'Bob')
+
+    def test_guides_list_excludes_guests(self):
+        """Guest-role users do NOT appear in the guides list."""
+        guest = make_user('guest@guides.com', UserProfile.Role.GUEST)
+        guest.profile.first_name = 'GuestOnly'
+        guest.profile.save()
+        resp = self.client.get(reverse('dashboard:guides_list'))
+        self.assertNotContains(resp, 'GuestOnly')
+
+    def test_edit_guide_role_updates_profile(self):
+        """POST to guide_edit updates the UserProfile role."""
+        guide = make_user('edit@guides.com', UserProfile.Role.GUIDE)
+        resp = self.client.post(
+            reverse('dashboard:guide_edit', args=[guide.profile.pk]),
+            {
+                'role': 'OPERATOR',
+                'first_name': guide.profile.first_name,
+                'last_name': guide.profile.last_name,
+                'phone_whatsapp': guide.profile.phone_whatsapp,
+            }
+        )
+        guide.profile.refresh_from_db()
+        self.assertEqual(guide.profile.role, 'OPERATOR')
+
+    def test_edit_guide_redirects_on_success(self):
+        """Successful role edit redirects to the guides list."""
+        guide = make_user('redirect@guides.com', UserProfile.Role.GUIDE)
+        resp = self.client.post(
+            reverse('dashboard:guide_edit', args=[guide.profile.pk]),
+            {
+                'role': 'GUIDE',
+                'first_name': 'Test',
+                'last_name': 'Guide',
+                'phone_whatsapp': '',
+            }
+        )
+        self.assertRedirects(resp, reverse('dashboard:guides_list'))
+
+    def test_non_staff_cannot_access_guides_tab(self):
+        """Regular guides (non-staff) cannot access the guides management tab."""
+        guide = make_user('regularguide@test.com', UserProfile.Role.GUIDE)
+        self.client.force_login(guide)
+        resp = self.client.get(reverse('dashboard:guides_list'))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_guides_list_shows_operator_users(self):
+        """OPERATOR-role users also appear in the guides list."""
+        op = make_user('op@guides.com', UserProfile.Role.OPERATOR)
+        op.profile.first_name = 'OpUser'
+        op.profile.save()
+        resp = self.client.get(reverse('dashboard:guides_list'))
+        self.assertContains(resp, 'OpUser')

@@ -269,15 +269,94 @@ def guests_list(request):
 @guide_required
 def guides_list(request):
     """
-    Render the guides management list view (stub).
+    Guide dashboard: Guides tab — lists all guide/operator/admin user profiles.
 
-    Currently a placeholder that renders the guides list template with no
-    guide data. A full implementation will query UserProfile filtered to
-    guide-level roles once the guides management feature is built out.
+    STAFF ONLY: Regular guides cannot manage other users' accounts.
+    This tab is restricted to Django staff (is_staff=True) for security.
+    Non-staff users who reach this view via the @guide_required decorator
+    are denied with a 403 before any data is queried.
 
-    Access: guide-level users and staff (enforced by @guide_required).
+    Displays UserProfile records with role in GUIDE_ROLES (excludes guests).
+    Ordered by role then surname for easy scanning of the guide roster.
+
+    Context:
+    - profiles: QuerySet of UserProfile with role in [GUIDE, OPERATOR, ADMIN]
+    - dev_mode: bool — controls DEV_MODE banner in template
+
+    ASSUMPTIONS:
+    1. Only staff users reach this view (enforced by PermissionDenied check).
+    2. All users have a UserProfile (created by post_save signal in accounts app).
+    3. UserProfile.user is a OneToOneField — select_related avoids N+1 on email display.
+
+    FAILURE MODES:
+    - Non-staff guide-role user: caught below and raises PermissionDenied (403).
+    - Empty queryset: renders {% empty %} block in template — no error.
     """
-    return render(request, 'admin_panel/guides/list.html', {'dev_mode': _dev_mode()})
+    from apps.accounts.models import UserProfile as Profile
+
+    # Non-staff cannot manage other users — raise 403 even though @guide_required passed.
+    # @guide_required allows GUIDE/OPERATOR/ADMIN roles; this view adds the extra
+    # is_staff requirement on top of that base gate.
+    if not request.user.is_staff:
+        raise PermissionDenied
+
+    # Only show guide-level profiles; guests are managed via the Guests tab instead.
+    profiles = (
+        Profile.objects
+        .filter(role__in=['GUIDE', 'OPERATOR', 'ADMIN'])
+        .select_related('user')  # avoid N+1 on user.email display in the template
+        .order_by('role', 'last_name', 'first_name')
+    )
+    return render(request, 'admin_panel/guides/list.html', {
+        'profiles': profiles,
+        'dev_mode': _dev_mode(),
+    })
+
+
+@staff_required
+def guide_edit(request, pk):
+    """
+    Guide dashboard: Edit a guide/operator user profile (staff only).
+
+    GET: Renders GuideRoleForm pre-populated with the profile's current values.
+    POST: Validates and saves role + contact field changes, then redirects to
+    the guides list.  On validation failure, re-renders the form with errors.
+
+    Args:
+        pk: UserProfile primary key (not User PK)
+
+    ASSUMPTIONS:
+    1. pk is a UserProfile PK — the URL captures profile.pk, not user.pk.
+    2. Only staff can reach this view (@staff_required decorator).
+    3. GuideRoleForm is imported locally to avoid circular imports at module level.
+
+    FAILURE MODES:
+    - Profile not found: get_object_or_404 raises Http404 → 404 response.
+    - Invalid POST data: form re-rendered with errors, DB unchanged.
+    - Non-staff user: @staff_required raises PermissionDenied before view body runs.
+    """
+    from django.shortcuts import get_object_or_404
+    from apps.accounts.models import UserProfile as Profile
+    from .forms import GuideRoleForm
+
+    # Fetch profile by PK; 404 if it doesn't exist rather than silent data error
+    profile = get_object_or_404(Profile, pk=pk)
+
+    if request.method == 'POST':
+        form = GuideRoleForm(request.POST, instance=profile)
+        if form.is_valid():
+            # Save role/name/phone changes; instance= ensures UPDATE, not INSERT
+            form.save()
+            return redirect('dashboard:guides_list')
+    else:
+        # Pre-populate form with the profile's existing values for GET
+        form = GuideRoleForm(instance=profile)
+
+    return render(request, 'admin_panel/guides/form.html', {
+        'form': form,
+        'profile': profile,
+        'dev_mode': _dev_mode(),
+    })
 
 
 # ---------------------------------------------------------------------------

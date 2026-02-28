@@ -1,5 +1,6 @@
 from django import forms
 from apps.tours.models import Tour, ItineraryItem, ActivityCategory
+from apps.accounts.models import UserProfile
 
 
 class TourForm(forms.ModelForm):
@@ -163,4 +164,44 @@ class ActivityCategoryForm(forms.ModelForm):
         help_texts = {
             # Link to Bootstrap Icons catalogue so guides can look up icon names
             'icon': 'Bootstrap Icons name — find all at icons.getbootstrap.com',
+        }
+
+
+class GuideRoleForm(forms.ModelForm):
+    """
+    Form for editing a guide/operator UserProfile's role and contact details.
+
+    Intentionally limited fields — only staff should use this form,
+    and only these fields are safe to change from the dashboard:
+    - role: promote/demote between GUIDE, OPERATOR, ADMIN
+    - name fields: correct typos in display name
+    - phone_whatsapp: update contact number for the guide portal
+
+    Fields excluded: date_of_birth, fitness_level, medical_conditions,
+    dietary_requirements, personal_notes — these are personal guest data,
+    not relevant for guide account management.
+
+    ASSUMPTIONS:
+    1. Only staff users access this form (enforced by @staff_required in view).
+    2. Model is set via late import below to avoid circular imports between
+       dashboard.forms and apps.accounts.models.
+    3. phone_whatsapp is optional (blank=True on the model field).
+
+    FAILURE MODES:
+    - Invalid role value: model TextChoices validation catches it at form.is_valid().
+    - Circular import if UserProfile imported at module top level: avoided by
+      setting GuideRoleForm.Meta.model after class definition using late import.
+    """
+
+    class Meta:
+        """Define fields, widget overrides, and labels for guide role editing."""
+
+        model = UserProfile
+        fields = ['role', 'first_name', 'last_name', 'phone_whatsapp']
+        widgets = {
+            # Placeholder shows expected international format for South African numbers
+            'phone_whatsapp': forms.TextInput(attrs={'placeholder': '+27821234567'}),
+        }
+        labels = {
+            'phone_whatsapp': 'WhatsApp number',
         }

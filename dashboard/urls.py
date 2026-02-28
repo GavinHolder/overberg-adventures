@@ -21,4 +21,5 @@ urlpatterns = [
     path('activities/<int:pk>/delete/', views.activity_delete, name='activity_delete'),
     path('guests/', views.guests_list, name='guests_list'),
     path('guides/', views.guides_list, name='guides_list'),
+    path('guides/<int:pk>/edit/', views.guide_edit, name='guide_edit'),
 ]
