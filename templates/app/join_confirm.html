@@ -1,4 +1,33 @@
 {% extends 'base_app.html' %}
+{% load static %}
+{% block title %}Join {{ tour.name }}{% endblock %}
 {% block main_class %}{% endblock %}
 {% block bottom_nav %}{% endblock %}
-{% block content %}<div class="p-4">Join confirm stub</div>{% endblock %}
+
+{% block content %}
+<div class="join-page px-4 py-5">
+
+  {% if messages %}
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible mb-3" role="alert">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  {% include 'app/partials/join_header.html' with tour=tour %}
+  {% include 'app/partials/join_user_card.html' with profile=profile %}
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn-oa-primary w-100 mb-3">
+      <i class="bi bi-check2-circle me-2"></i>Join This Trip
+    </button>
+  </form>
+
+  <a href="{% url 'landing:home' %}" class="d-block text-center text-muted text-decoration-none small">
+    Cancel
+  </a>
+
+</div>
+{% endblock %}
