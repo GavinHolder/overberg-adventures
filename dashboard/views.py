@@ -214,22 +214,84 @@ def tour_create(request):
 @guide_required
 def tour_detail(request, pk):
     """
-    Stub: tour detail view (not yet implemented).
+    Guide dashboard: Tour detail view with Itinerary / Guests / Overview sub-tabs.
 
-    Fetches the Tour by primary key (404 if not found) and renders the list
-    template with that single tour so the URL resolves. A real implementation
-    will use a dedicated detail template.
+    Loads a single tour and all related data needed for all three tabs in one query.
+    The active tab is controlled by ?tab= query parameter (default: 'itinerary').
+
+    Access control:
+    - GUIDE role: can only view their own tours (403 otherwise)
+    - OPERATOR/ADMIN/staff: can view any tour
 
     Args:
-        pk: Primary key of the Tour to display.
+        pk: Tour primary key
 
-    Access: guide-level users and staff (enforced by @guide_required).
+    Context passed to template:
+        tour: Tour instance with guide__profile selected
+        active_tab: str — 'itinerary', 'guests', or 'overview'
+        bookings: QuerySet of Bookings with user__profile selected
+        items_by_day: dict of {day_int: [ItineraryItem, ...]} sorted by day
+        dev_mode: bool
+
+    ASSUMPTIONS:
+    - items_by_day is sorted so days render in ascending order.
+    - Booking.invited_at exists (auto_now_add=True on the model).
+
+    FAILURE MODES:
+    - Tour not found: 404 via get_object_or_404
+    - Wrong guide accessing: 403 PermissionDenied
     """
-    # Deferred import keeps the module-level import surface minimal while
-    # this view is still a stub.
     from django.shortcuts import get_object_or_404
-    tour = get_object_or_404(Tour, pk=pk)
-    return render(request, 'admin_panel/tours/list.html', {'tours': [tour], 'dev_mode': _dev_mode()})
+    from apps.bookings.models import Booking
+    from apps.tours.models import ItineraryItem
+
+    # Fetch tour with guide profile in one query (avoids N+1 on header render)
+    tour = get_object_or_404(
+        Tour.objects.select_related('guide__profile'),
+        pk=pk
+    )
+
+    # Ownership check: GUIDE role can only access their own tours.
+    # Staff and OPERATOR/ADMIN roles bypass this check and see all tours.
+    profile = getattr(request.user, 'profile', None)
+    if not request.user.is_staff and profile and profile.role == 'GUIDE':
+        if tour.guide != request.user:
+            raise PermissionDenied
+
+    # Determine active tab from query string; default to itinerary
+    active_tab = request.GET.get('tab', 'itinerary')
+
+    # Load bookings with user profiles for guest manifest tab.
+    # invited_at provides a stable creation-order sort for the guest list.
+    bookings = (
+        Booking.objects
+        .filter(tour=tour)
+        .select_related('user__profile')
+        .order_by('invited_at')
+    )
+
+    # Load itinerary items for the builder tab (category join avoids extra queries)
+    itinerary_items = (
+        ItineraryItem.objects
+        .filter(tour=tour)
+        .select_related('category')
+    )
+
+    # Group items by day and sort ascending (day 1 before day 2, etc.)
+    items_by_day = {}
+    for item in itinerary_items:
+        # setdefault creates the list on first encounter for each day key
+        items_by_day.setdefault(item.day, []).append(item)
+    # Sort the dict by day number so the template iterates day 1, 2, 3…
+    items_by_day = dict(sorted(items_by_day.items()))
+
+    return render(request, 'admin_panel/tours/detail.html', {
+        'tour': tour,
+        'active_tab': active_tab,
+        'bookings': bookings,
+        'items_by_day': items_by_day,
+        'dev_mode': _dev_mode(),
+    })
 
 
 @guide_required

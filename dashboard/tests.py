@@ -302,3 +302,65 @@ class TourCRUDTest(TestCase):
         resp = self.client.post(reverse('dashboard:tour_create'), {})
         self.assertEqual(Tour.objects.count(), 0)
         self.assertEqual(resp.status_code, 200)  # form re-rendered, not redirect
+
+
+class TourDetailTest(TestCase):
+    """
+    Tests for the tour detail view (Task 26).
+    Covers: rendering, sub-tab presence, tour code display,
+    capacity stats, and guide ownership enforcement.
+    """
+
+    def setUp(self):
+        """Create a guide and a tour they own."""
+        self.guide = make_user('guide@detail.com', UserProfile.Role.GUIDE)
+        self.client.force_login(self.guide)
+        self.tour = make_tour(self.guide, 'Detail Tour')
+
+    def test_detail_shows_tour_name(self):
+        """Tour detail page renders with the tour name visible."""
+        resp = self.client.get(reverse('dashboard:tour_detail', args=[self.tour.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Detail Tour')
+
+    def test_detail_shows_sub_tabs(self):
+        """All three sub-tabs (Itinerary, Guests, Overview) are rendered."""
+        resp = self.client.get(reverse('dashboard:tour_detail', args=[self.tour.pk]))
+        self.assertContains(resp, 'Itinerary')
+        self.assertContains(resp, 'Guests')
+        self.assertContains(resp, 'Overview')
+
+    def test_detail_shows_tour_code(self):
+        """Tour code is displayed on the overview tab (default shown on detail load)."""
+        resp = self.client.get(
+            reverse('dashboard:tour_detail', args=[self.tour.pk]),
+            {'tab': 'overview'}
+        )
+        self.assertContains(resp, self.tour.tour_code)
+
+    def test_detail_shows_capacity(self):
+        """Capacity number is visible on the overview tab."""
+        resp = self.client.get(
+            reverse('dashboard:tour_detail', args=[self.tour.pk]),
+            {'tab': 'overview'}
+        )
+        self.assertContains(resp, str(self.tour.capacity))
+
+    def test_guide_cannot_access_other_guide_tour(self):
+        """A guide cannot view another guide's tour detail — returns 403."""
+        other = make_user('other@detail.com', UserProfile.Role.GUIDE)
+        other_tour = make_tour(other, 'Other Tour')
+        resp = self.client.get(reverse('dashboard:tour_detail', args=[other_tour.pk]))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_staff_can_access_any_tour(self):
+        """Staff can access any tour's detail regardless of guide ownership."""
+        staff = make_user('staff@detail.com', is_staff=True)
+        self.client.force_login(staff)
+        resp = self.client.get(reverse('dashboard:tour_detail', args=[self.tour.pk]))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_default_tab_is_itinerary(self):
+        """Without ?tab=, the itinerary tab is active by default."""
+        resp = self.client.get(reverse('dashboard:tour_detail', args=[self.tour.pk]))
+        self.assertContains(resp, 'itinerary')

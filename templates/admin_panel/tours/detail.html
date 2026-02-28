@@ -1,0 +1,54 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}{{ tour.name }}{% endblock %}
+{# Mark the Tours nav tab as active so the bottom nav highlights correctly #}
+{% block tab_tours %}active{% endblock %}
+
+{% block content %}
+{# ── Page header with back link and edit shortcut ── #}
+<div class="d-flex align-items-center mb-3">
+  {# Back arrow returns the guide to the full tours list without a JS history step #}
+  <a href="{% url 'dashboard:tours_list' %}" class="btn btn-sm btn-link ps-0 text-muted">
+    <i class="bi bi-arrow-left me-1"></i>Tours
+  </a>
+  <h6 class="mb-0 fw-bold flex-grow-1 text-truncate">{{ tour.name }}</h6>
+  {# Quick edit button so guide doesn't need to go back to list first #}
+  <a href="{% url 'dashboard:tour_edit' tour.pk %}" class="btn btn-sm btn-outline-warning ms-2">
+    <i class="bi bi-pencil"></i>
+  </a>
+</div>
+
+{# ── Sub-tab navigation ── #}
+{# Each tab is a plain GET link; Django re-renders the page with the appropriate partial.
+   This avoids Alpine/HTMX tab state complexity and keeps the URL bookmarkable. #}
+<ul class="nav nav-tabs mb-3" role="tablist">
+  <li class="nav-item">
+    {# Itinerary tab: default when no ?tab= param is present #}
+    <a class="nav-link {% if active_tab == 'itinerary' %}active{% endif %}"
+       href="?tab=itinerary">Itinerary</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'guests' %}active{% endif %}"
+       href="?tab=guests">
+      Guests
+      {# Inline guest count badge gives guides a quick enrollment snapshot at a glance #}
+      <span class="badge bg-secondary ms-1" style="font-size:10px;">{{ bookings.count }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'overview' %}active{% endif %}"
+       href="?tab=overview">Overview</a>
+  </li>
+</ul>
+
+{# ── Tab content: delegate to partials to keep this file thin ── #}
+{# Each partial receives the full template context so they can access tour, bookings, etc. #}
+{% if active_tab == 'itinerary' %}
+  {% include 'admin_panel/tours/partials/itinerary_tab.html' %}
+{% elif active_tab == 'guests' %}
+  {% include 'admin_panel/tours/partials/guests_tab.html' %}
+{% else %}
+  {# 'overview' tab is the fallback for any unrecognised ?tab= value #}
+  {% include 'admin_panel/tours/partials/overview_tab.html' %}
+{% endif %}
+
+{% endblock %}

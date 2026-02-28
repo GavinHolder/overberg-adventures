@@ -1,0 +1,72 @@
+{# Overview tab partial — shows tour stats, code, dates, description, actions.
+   Context variables used: tour, bookings (QuerySet) #}
+
+{# ── Stats cards ── #}
+{# Three-column grid gives guides at-a-glance capacity info without needing to read text #}
+<div class="inline-form-card mb-3">
+  <div class="row g-3 text-center">
+    <div class="col-4">
+      {# bookings.count is evaluated in Python; no extra DB hit since QS is already loaded #}
+      <div class="fw-bold fs-4">{{ bookings.count }}</div>
+      <div class="text-muted" style="font-size:11px;">Guests</div>
+    </div>
+    <div class="col-4">
+      {# spots_remaining is a @property on Tour — always fresh from the DB #}
+      <div class="fw-bold fs-4">{{ tour.spots_remaining }}</div>
+      <div class="text-muted" style="font-size:11px;">Spots Left</div>
+    </div>
+    <div class="col-4">
+      <div class="fw-bold fs-4">{{ tour.capacity }}</div>
+      <div class="text-muted" style="font-size:11px;">Capacity</div>
+    </div>
+  </div>
+</div>
+
+{# ── Tour code ── #}
+{# font-monospace makes the code visually distinct so guides can copy it easily #}
+<div class="inline-form-card mb-3">
+  <div class="small text-muted mb-1">Tour Code</div>
+  <div class="fw-bold font-monospace fs-5">{{ tour.tour_code }}</div>
+  <div class="text-muted" style="font-size:11px;">Share with guests after payment confirmation</div>
+</div>
+
+{# ── Dates ── #}
+<div class="inline-form-card mb-3">
+  <div class="small text-muted mb-1">Dates</div>
+  <div>{{ tour.start_datetime|date:"D d M Y, H:i" }}</div>
+  {% if tour.end_datetime %}
+  {# Arrow prefix makes the end date read as a range continuation #}
+  <div class="text-muted small">&#8594; {{ tour.end_datetime|date:"D d M Y, H:i" }}</div>
+  {% endif %}
+</div>
+
+{# ── Location ── #}
+<div class="inline-form-card mb-3">
+  <div class="small text-muted mb-1">Location</div>
+  <div>{{ tour.location_name }}</div>
+</div>
+
+{# ── Description (optional field) ── #}
+{% if tour.description %}
+<div class="inline-form-card mb-3">
+  <div class="small text-muted mb-1">Description</div>
+  {# white-space: pre-wrap preserves any line breaks the guide entered #}
+  <p class="mb-0" style="font-size:14px; white-space:pre-wrap;">{{ tour.description }}</p>
+</div>
+{% endif %}
+
+{# ── Action buttons ── #}
+<div class="d-flex gap-2 mt-3">
+  {# QR code link — useful for printing or showing guests at check-in #}
+  <a href="{% url 'dashboard:tour_qr' tour.pk %}" class="btn btn-outline-secondary flex-fill">
+    <i class="bi bi-qr-code me-1"></i>QR Code
+  </a>
+  {# Delete with browser confirm — plain POST so it works without JavaScript running HTMX #}
+  <form method="post" action="{% url 'dashboard:tour_delete' tour.pk %}"
+        onsubmit="return confirm('Delete {{ tour.name|escapejs }}? This cannot be undone.')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-danger">
+      <i class="bi bi-trash me-1"></i>Delete Tour
+    </button>
+  </form>
+</div>
