@@ -7,6 +7,12 @@
 
   {% include 'app/partials/itinerary_header.html' with booking=booking tour=tour %}
 
+  <!-- Phase 7: Google Maps integration -->
+  <div id="itinerary-map-placeholder" class="rounded-3 mx-4 mb-4"
+       style="height:120px;background:#e9ecef;display:flex;align-items:center;justify-content:center;">
+    <span class="text-muted small"><i class="bi bi-map me-1"></i>Interactive map coming soon</span>
+  </div>
+
   {% if items_by_day %}
   <h2 class="section-heading mb-3">
     <i class="bi bi-list-check me-2" style="color:var(--color-primary)"></i>ITINERARY

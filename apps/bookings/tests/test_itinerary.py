@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 from django.utils import timezone
 from apps.accounts.models import UserProfile
 from apps.tours.models import Tour, TourCodeWord, ItineraryItem, ActivityCategory
@@ -89,3 +90,22 @@ class ItineraryDetailTest(TestCase):
         self.booking.refresh_from_db()
         self.assertEqual(self.booking.status, Booking.Status.RSVP_PENDING)
         self.assertRedirects(resp, f'/app/itinerary/{self.booking.id}/')
+
+    def test_shows_rsvp_pending_banner(self):
+        tour2 = _make_tour(self.guide, code='pelican')
+        booking = Booking.objects.create(
+            user=self.guest, tour=tour2, status=Booking.Status.RSVP_PENDING
+        )
+        self.client.force_login(self.guest)
+        resp = self.client.get(reverse('bookings:itinerary_detail', args=[booking.id]))
+        self.assertContains(resp, 'RSVP received')
+
+    def test_shows_empty_items_fallback(self):
+        """No activities on tour → shows fallback message"""
+        tour3 = _make_tour(self.guide, code='milkwood')
+        booking = Booking.objects.create(
+            user=self.guest, tour=tour3, status=Booking.Status.INVITED
+        )
+        self.client.force_login(self.guest)
+        resp = self.client.get(reverse('bookings:itinerary_detail', args=[booking.id]))
+        self.assertContains(resp, 'No activities')
