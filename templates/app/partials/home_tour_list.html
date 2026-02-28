@@ -1,0 +1,16 @@
+{% if bookings %}
+<div class="px-4 pb-4">
+  <h2 class="section-heading mb-3">
+    <i class="bi bi-briefcase me-2" style="color:var(--color-primary)"></i>MY TOURS
+  </h2>
+  {% for booking in bookings %}
+    {% include 'app/partials/tour_card.html' with booking=booking %}
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center text-muted px-4 mt-2 pb-4">
+  <i class="bi bi-map display-6 d-block mb-3 opacity-50"></i>
+  <p class="mb-1 fw-semibold">You haven't joined any tours yet.</p>
+  <p class="small">Enter a tour code above to get started!</p>
+</div>
+{% endif %}

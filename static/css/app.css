@@ -276,3 +276,77 @@ body {
 
 /* Alpine.js cloak */
 [x-cloak] { display: none !important; }
+
+/* ---- Home screen ---- */
+.home-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+.home-logo {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+}
+.btn-oa-discover {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 12px 18px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.btn-oa-discover:hover { opacity: 0.92; }
+
+/* ---- Section headings ---- */
+.section-heading {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+/* ---- Tour card ---- */
+.tour-card {
+  background: var(--color-surface);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 16px;
+  color: var(--color-text);
+  transition: box-shadow 0.15s;
+}
+.tour-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.tour-card-name { font-size: 17px; font-weight: 700; color: var(--color-text); }
+.tour-code-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-primary);
+  background: rgba(249,115,22,0.1);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+/* ---- Status badges ---- */
+.status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.status-confirmed    { background: #D1FAE5; color: #065F46; }
+.status-rsvp_pending { background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; }
+.status-invited      { background: #EDE9FE; color: #5B21B6; }
+.status-completed    { background: #E5E7EB; color: #374151; }
+.status-cancelled    { background: #FEE2E2; color: #991B1B; }
+.status-active       { background: #D1FAE5; color: #065F46; }
+.status-draft        { background: #F3F4F6; color: #6B7280; }

@@ -1,0 +1,20 @@
+{% load static %}
+<div class="home-hero text-center px-4 pb-4 pt-3">
+  <img src="{% static 'img/logo.png' %}" alt="Overstrand Adventures" class="home-logo mb-4">
+  <h1 class="fw-bold mb-1">Welcome, {{ request.user.profile.first_name }}!</h1>
+  <p class="text-muted mb-0">Enter your code to unlock the Overstrand</p>
+</div>
+
+<div class="px-4 mb-4">
+  <div class="card-oa p-2">
+    <form method="post" action="{% url 'bookings:join_lookup' %}" class="d-flex gap-2">
+      {% csrf_token %}
+      <input type="text" name="tour_code"
+             placeholder="ENTER TOUR CODE"
+             class="form-control flex-grow-1 text-uppercase fw-semibold"
+             style="letter-spacing:0.08em;border-radius:12px;border:1.5px solid #e5e7eb;"
+             autocomplete="off" autocapitalize="characters" required>
+      <button type="submit" class="btn-oa-discover">Discover</button>
+    </form>
+  </div>
+</div>
