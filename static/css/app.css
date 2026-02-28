@@ -373,3 +373,70 @@ body {
   border-radius: 50%;
   flex-shrink: 0;
 }
+
+/* ---- Itinerary ---- */
+.itinerary-header-card {
+  background: var(--color-surface);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 16px;
+}
+
+/* Timeline */
+.activity-item { position: relative; }
+.activity-timeline-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 20px;
+  flex-shrink: 0;
+}
+.activity-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+.activity-line {
+  width: 2px;
+  flex-grow: 1;
+  background: #e5e7eb;
+  margin-top: 4px;
+  min-height: 24px;
+}
+.activity-item:last-child .activity-line { display: none; }
+
+.activity-time {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 2px;
+}
+.activity-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.activity-category-badge {
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+.activity-content { padding-bottom: 16px; }
+
+/* Day sections */
+.itinerary-day-header {
+  background: none;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #f3f4f6;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--color-text);
+}
+.itinerary-day-header:hover { background: #e5e7eb; }

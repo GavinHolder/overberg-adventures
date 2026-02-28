@@ -1,0 +1,12 @@
+<div class="itinerary-day-section mb-3" x-data="{ open: true }">
+  <button class="itinerary-day-header w-100 d-flex justify-content-between align-items-center"
+          @click="open = !open" type="button">
+    <span class="fw-semibold">Day {{ day }}</span>
+    <i class="bi" :class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+  </button>
+  <div x-show="open" x-transition>
+    {% for item in items %}
+      {% include 'app/partials/activity_item.html' with item=item %}
+    {% endfor %}
+  </div>
+</div>

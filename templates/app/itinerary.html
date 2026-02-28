@@ -1,2 +1,26 @@
 {% extends 'base_app.html' %}
-{% block content %}<div class="p-4">Itinerary stub</div>{% endblock %}
+{% load static %}
+{% block title %}{{ tour.name }} — Itinerary{% endblock %}
+
+{% block content %}
+<div class="px-3 py-4">
+
+  {% include 'app/partials/itinerary_header.html' with booking=booking tour=tour %}
+
+  {% if items_by_day %}
+  <h2 class="section-heading mb-3">
+    <i class="bi bi-list-check me-2" style="color:var(--color-primary)"></i>ITINERARY
+  </h2>
+  {% for day, items in items_by_day.items %}
+    {% include 'app/partials/itinerary_day.html' with day=day items=items %}
+  {% endfor %}
+  {% else %}
+  <div class="text-center text-muted py-4">
+    <i class="bi bi-calendar-x display-6 d-block mb-3 opacity-50"></i>
+    <p class="fw-semibold mb-1">No activities yet</p>
+    <p class="small">Your guide is still building the itinerary.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
