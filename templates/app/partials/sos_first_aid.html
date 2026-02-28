@@ -1,0 +1,139 @@
+<div class="card-oa mb-3">
+  <h2 class="fw-bold mb-3" style="font-size:1.05rem">
+    <i class="bi bi-heart-pulse-fill text-danger me-2"></i>First Aid Guides
+  </h2>
+  <p class="text-muted small mb-3">Works offline. Tap a condition for step-by-step guidance.</p>
+
+  <!-- Snake Bite -->
+  <div x-data="{ open: false }" class="first-aid-item">
+    <button class="first-aid-toggle" x-on:click="open = !open">
+      <span class="d-flex align-items-center gap-2">
+        <span class="first-aid-icon">🐍</span>
+        <span class="fw-semibold">Snake Bite</span>
+      </span>
+      <i class="bi" x-bind:class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+    </button>
+    <div x-show="open" x-transition class="first-aid-content">
+      <ol class="first-aid-steps">
+        <li>Move away from the snake — do not attempt to catch or kill it.</li>
+        <li>Keep the victim calm and still — movement spreads venom faster.</li>
+        <li>Immobilise the bitten limb below heart level.</li>
+        <li>Remove tight items (rings, watches, bracelets) near the bite.</li>
+        <li>Do <strong>NOT</strong> cut the bite, suck out venom, or apply a tourniquet.</li>
+        <li>Note the time of bite and describe the snake to emergency services.</li>
+        <li>Get to hospital immediately — call 10177 (ambulance).</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Broken Bone -->
+  <div x-data="{ open: false }" class="first-aid-item">
+    <button class="first-aid-toggle" x-on:click="open = !open">
+      <span class="d-flex align-items-center gap-2">
+        <span class="first-aid-icon">🦴</span>
+        <span class="fw-semibold">Broken Bone / Fracture</span>
+      </span>
+      <i class="bi" x-bind:class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+    </button>
+    <div x-show="open" x-transition class="first-aid-content">
+      <ol class="first-aid-steps">
+        <li>Do not move the injured limb unless absolutely necessary.</li>
+        <li>Immobilise the limb using a makeshift splint (sticks, rolled clothing).</li>
+        <li>Pad around the break with soft material for comfort.</li>
+        <li>Elevate the limb if possible to reduce swelling.</li>
+        <li>Apply ice pack wrapped in cloth for up to 20 minutes.</li>
+        <li>For open fracture (bone visible): cover with clean cloth, do not push bone back.</li>
+        <li>Call 10177 for an ambulance or transport to nearest hospital.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Heart Attack -->
+  <div x-data="{ open: false }" class="first-aid-item">
+    <button class="first-aid-toggle" x-on:click="open = !open">
+      <span class="d-flex align-items-center gap-2">
+        <span class="first-aid-icon">❤️</span>
+        <span class="fw-semibold">Heart Attack</span>
+      </span>
+      <i class="bi" x-bind:class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+    </button>
+    <div x-show="open" x-transition class="first-aid-content">
+      <ol class="first-aid-steps">
+        <li>Call 10177 immediately.</li>
+        <li>Have the person sit or lie down in a comfortable position.</li>
+        <li>Loosen tight clothing around neck and chest.</li>
+        <li>If conscious and not allergic: give 300mg aspirin to chew (not swallow whole).</li>
+        <li>Do not give food or drink.</li>
+        <li>If they become unconscious and stop breathing: begin CPR.</li>
+        <li>CPR: 30 chest compressions (hard and fast) then 2 rescue breaths. Repeat.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Fainting -->
+  <div x-data="{ open: false }" class="first-aid-item">
+    <button class="first-aid-toggle" x-on:click="open = !open">
+      <span class="d-flex align-items-center gap-2">
+        <span class="first-aid-icon">😵</span>
+        <span class="fw-semibold">Fainting</span>
+      </span>
+      <i class="bi" x-bind:class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+    </button>
+    <div x-show="open" x-transition class="first-aid-content">
+      <ol class="first-aid-steps">
+        <li>Lay the person flat on their back.</li>
+        <li>Elevate their legs 30cm above heart level.</li>
+        <li>Loosen any tight clothing.</li>
+        <li>Ensure fresh air — fan or move to shade.</li>
+        <li>Do not give anything by mouth until fully conscious.</li>
+        <li>Once conscious: keep lying down for several minutes before sitting up slowly.</li>
+        <li>Seek medical attention if unconscious more than 1–2 minutes, or if injury occurred.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Drowning -->
+  <div x-data="{ open: false }" class="first-aid-item">
+    <button class="first-aid-toggle" x-on:click="open = !open">
+      <span class="d-flex align-items-center gap-2">
+        <span class="first-aid-icon">🌊</span>
+        <span class="fw-semibold">Drowning</span>
+      </span>
+      <i class="bi" x-bind:class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+    </button>
+    <div x-show="open" x-transition class="first-aid-content">
+      <ol class="first-aid-steps">
+        <li>Call NSRI: 021 938 1300 or 112 immediately.</li>
+        <li>Remove person from water only if safe to do so — throw rope, use pole, do not swim to them unless trained.</li>
+        <li>Lay person flat — do NOT hold upside down to drain water.</li>
+        <li>Check for breathing. If not breathing: begin CPR immediately.</li>
+        <li>CPR: 30 chest compressions, 2 rescue breaths. Repeat until help arrives.</li>
+        <li>Keep person warm — hypothermia risk even in warm water.</li>
+        <li>All near-drowning victims need hospital evaluation even if they seem fine.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Burns -->
+  <div x-data="{ open: false }" class="first-aid-item">
+    <button class="first-aid-toggle" x-on:click="open = !open">
+      <span class="d-flex align-items-center gap-2">
+        <span class="first-aid-icon">🔥</span>
+        <span class="fw-semibold">Burns</span>
+      </span>
+      <i class="bi" x-bind:class="open ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+    </button>
+    <div x-show="open" x-transition class="first-aid-content">
+      <ol class="first-aid-steps">
+        <li>Cool the burn with cool (not cold) running water for minimum 20 minutes.</li>
+        <li>Remove jewellery/clothing near the burn — unless stuck to skin.</li>
+        <li>Do <strong>NOT</strong> apply butter, toothpaste, ice, or home remedies.</li>
+        <li>Cover loosely with clean cling film or non-fluffy material.</li>
+        <li>Do not pop blisters.</li>
+        <li>For large burns (hand-sized or larger): call 10177.</li>
+        <li>For chemical burns: rinse with large amounts of water for 20+ minutes.</li>
+      </ol>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,50 @@
+<div class="card-oa mb-3 border-danger" style="border:1.5px solid #EF4444;">
+  <div class="d-flex align-items-center gap-2 mb-2">
+    <i class="bi bi-whatsapp text-success" style="font-size:1.3rem"></i>
+    <h2 class="fw-bold mb-0" style="font-size:1.05rem">Alert Your Guide</h2>
+  </div>
+  <p class="text-muted small mb-3">Send an SOS message with your location to {{ active_booking.tour.guide.profile.full_name }}.</p>
+
+  <div x-data="sosGuide()" class="w-100">
+    <button x-on:click="send()" class="sos-whatsapp-btn w-100" x-bind:disabled="sending">
+      <i class="bi bi-whatsapp me-2"></i>
+      <span x-text="sending ? 'Getting location...' : 'SOS — Send Location to Guide'"></span>
+    </button>
+    <p x-show="error" x-cloak class="text-danger small mt-2" x-text="error"></p>
+  </div>
+</div>
+
+<script>
+function sosGuide() {
+  return {
+    sending: false,
+    error: '',
+    guidePhone: '{{ guide_whatsapp }}',
+    tourName: '{{ active_booking.tour.name|escapejs }}',
+    send() {
+      this.error = '';
+      if (!confirm('Send emergency SOS message to your guide?')) return;
+      this.sending = true;
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          this.sending = false;
+          const lat = pos.coords.latitude.toFixed(6);
+          const lng = pos.coords.longitude.toFixed(6);
+          const mapUrl = 'https://maps.google.com/?q=' + lat + ',' + lng;
+          const msg = encodeURIComponent(
+            '🚨 SOS — ' + this.tourName + '\n' +
+            'I need help. My location:\n' + mapUrl
+          );
+          window.open('https://wa.me/' + this.guidePhone + '?text=' + msg, '_blank');
+        },
+        () => {
+          this.sending = false;
+          this.error = 'Location unavailable. Message sent without GPS.';
+          const msg = encodeURIComponent('🚨 SOS — ' + this.tourName + '\nI need help! Location unavailable.');
+          window.open('https://wa.me/' + this.guidePhone + '?text=' + msg, '_blank');
+        }
+      );
+    }
+  };
+}
+</script>

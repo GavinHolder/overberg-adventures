@@ -1,2 +1,38 @@
 {% extends 'base_app.html' %}
-{% block content %}<div class="p-4">SOS stub</div>{% endblock %}
+{% block title %}SOS — Emergency{% endblock %}
+
+{% block content %}
+<div class="sos-page px-3 pt-4 pb-6">
+
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div class="sos-icon-header">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+    </div>
+    <div>
+      <h1 class="fw-bold mb-0" style="font-size:1.4rem">Emergency</h1>
+      <p class="text-muted small mb-0">Stay calm. Help is available.</p>
+    </div>
+  </div>
+
+  {% if config.show_whatsapp_sos and guide_whatsapp %}
+    {% include 'app/partials/sos_guide_alert.html' with guide_whatsapp=guide_whatsapp active_booking=active_booking only %}
+  {% endif %}
+
+  {% if config.show_sa_emergency_numbers %}
+    {% include 'app/partials/sos_sa_numbers.html' only %}
+  {% endif %}
+
+  {% if config.show_gps_share %}
+    {% include 'app/partials/sos_gps_share.html' only %}
+  {% endif %}
+
+  {% if config.show_emergency_contacts and contacts %}
+    {% include 'app/partials/sos_contacts.html' with contacts=contacts only %}
+  {% endif %}
+
+  {% if config.show_first_aid %}
+    {% include 'app/partials/sos_first_aid.html' only %}
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -439,3 +439,50 @@ body {
   color: var(--color-text);
 }
 .itinerary-day-header:hover { background: #e5e7eb; }
+
+/* ---- SOS screen ---- */
+.sos-page { min-height: 100vh; }
+.sos-icon-header {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: #FEE2E2; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 1.4rem; color: #EF4444;
+}
+.sos-whatsapp-btn {
+  background: #25D366; color: white; border: none; border-radius: 12px;
+  padding: 14px 20px; font-size: 1rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; width: 100%;
+}
+.sos-whatsapp-btn:disabled { opacity: 0.7; cursor: wait; }
+.sos-numbers-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.sos-number-card {
+  background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: 12px;
+  padding: 12px; text-decoration: none; display: flex; flex-direction: column;
+  align-items: center; text-align: center; color: inherit;
+}
+.sos-number-card:hover { background: #FEE2E2; }
+.sos-number-label { font-size: 11px; color: #6B7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.sos-number { font-size: 1.15rem; font-weight: 800; color: #DC2626; margin-top: 4px; }
+.sos-ambulance { background: #EFF6FF; border-color: #BFDBFE; }
+.sos-ambulance .sos-number { color: #1D4ED8; }
+.sos-nsri { background: #F0FDF4; border-color: #BBF7D0; }
+.sos-nsri .sos-number { color: #15803D; font-size: 0.95rem; }
+.sos-contact-btn {
+  background: var(--color-primary); color: white; border-radius: 50%;
+  width: 40px; height: 40px; display: flex; align-items: center;
+  justify-content: center; text-decoration: none; flex-shrink: 0;
+}
+
+/* First aid guides */
+.first-aid-item { border-bottom: 1px solid var(--color-border); }
+.first-aid-item:last-child { border-bottom: none; }
+.first-aid-toggle {
+  background: none; border: none; width: 100%; padding: 12px 0;
+  display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer; color: var(--color-text);
+}
+.first-aid-icon { font-size: 1.2rem; }
+.first-aid-content { padding-bottom: 12px; }
+.first-aid-steps { padding-left: 20px; margin: 0; }
+.first-aid-steps li { margin-bottom: 6px; font-size: 14px; line-height: 1.5; color: var(--color-text); }
