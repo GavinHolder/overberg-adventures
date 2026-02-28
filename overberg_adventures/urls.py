@@ -3,7 +3,10 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from apps.landing.views import service_worker
+
 urlpatterns = [
+    path('service-worker.js', service_worker, name='service-worker'),
     path('admin/', admin.site.urls),
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
     path('app/', include('apps.tours.urls', namespace='app')),  # placeholder

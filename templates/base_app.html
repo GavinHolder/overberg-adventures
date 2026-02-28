@@ -10,7 +10,7 @@
   <title>{% block title %}Overstrand Adventures{% endblock %}</title>
 
   {% load static %}
-  <link rel="manifest" href="/static/manifest.json">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
   <link rel="icon" href="{% static 'img/logo.png' %}">
 
   <!-- Bootstrap 5.3 CSS -->
@@ -49,7 +49,7 @@
 
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/static/js/service-worker.js');
+      navigator.serviceWorker.register('/service-worker.js');
     }
   </script>
 
