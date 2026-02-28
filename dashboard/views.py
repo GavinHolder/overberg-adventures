@@ -6,7 +6,7 @@ from django.conf import settings
 
 from .decorators import guide_required, staff_required
 from .forms import TourForm
-from apps.tours.models import Tour
+from apps.tours.models import Tour, ItineraryItem
 
 
 def _dev_mode():
@@ -404,3 +404,224 @@ def tour_qr(request, pk):
     from django.shortcuts import get_object_or_404
     tour = get_object_or_404(Tour, pk=pk)
     return render(request, 'admin_panel/tours/list.html', {'tours': [tour], 'dev_mode': _dev_mode()})
+
+
+# ---------------------------------------------------------------------------
+# Itinerary builder views (Task 27)
+# ---------------------------------------------------------------------------
+
+def _get_tour_for_guide(request, tour_pk):
+    """
+    Fetch a Tour by PK and enforce guide ownership.
+
+    Staff and OPERATOR/ADMIN roles can access any tour.
+    GUIDE role users can only access tours they own.
+
+    Args:
+        request: HttpRequest with authenticated user
+        tour_pk: Tour primary key from URL
+
+    Returns:
+        Tour instance
+
+    Raises:
+        Http404 if tour doesn't exist
+        PermissionDenied if GUIDE role user tries to access another guide's tour
+
+    ASSUMPTIONS:
+    - request.user is authenticated (caller already decorated with @guide_required)
+
+    FAILURE MODES:
+    - Tour not found: Http404 raised by get_object_or_404
+    - Wrong guide ownership: PermissionDenied raised explicitly
+    """
+    from django.shortcuts import get_object_or_404
+    tour = get_object_or_404(Tour, pk=tour_pk)
+    profile = getattr(request.user, 'profile', None)
+    # Only restrict GUIDE role — OPERATOR/ADMIN/staff see everything
+    if not request.user.is_staff and profile and profile.role == 'GUIDE':
+        if tour.guide != request.user:
+            raise PermissionDenied
+    return tour
+
+
+@guide_required
+def itinerary_add(request, tour_pk):
+    """
+    Guide dashboard: Add a new ItineraryItem to a tour.
+
+    GET: Returns the add form partial (HTMX target: #itinerary-form-slot).
+    POST: Validates, saves item with tour FK, returns:
+      - HTMX request: item row partial for inline insertion
+      - Normal request: redirects to tour detail itinerary tab
+
+    Args:
+        tour_pk: Tour PK from URL
+
+    ASSUMPTIONS:
+    - HTMX requests include HX-Request header
+    - The itinerary_item_row partial requires 'tour' in context for URL generation
+
+    FAILURE MODES:
+    - Invalid form: form re-rendered with errors; no DB write occurs
+    - Wrong ownership: 403 from _get_tour_for_guide
+    """
+    from .forms import ItineraryItemForm
+    tour = _get_tour_for_guide(request, tour_pk)
+
+    if request.method == 'POST':
+        form = ItineraryItemForm(request.POST)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.tour = tour  # set the FK that was excluded from the form
+            item.save()
+            # HTMX: return just the new row partial so it can be injected inline
+            if request.headers.get('HX-Request'):
+                return render(request, 'admin_panel/tours/partials/itinerary_item_row.html', {
+                    'item': item,
+                    'tour': tour,
+                })
+            return redirect(
+                reverse('dashboard:tour_detail', args=[tour.pk]) + '?tab=itinerary'
+            )
+        # Invalid form: return form partial with errors for HTMX, or full page
+        if request.headers.get('HX-Request'):
+            return render(request, 'admin_panel/tours/partials/itinerary_item_form.html', {
+                'form': form,
+                'tour': tour,
+                'dev_mode': _dev_mode(),
+            })
+    else:
+        # Default order = number of existing items (append to end)
+        next_order = ItineraryItem.objects.filter(tour=tour).count()
+        form = ItineraryItemForm(initial={'day': 1, 'order': next_order})
+
+    return render(request, 'admin_panel/tours/partials/itinerary_item_form.html', {
+        'form': form,
+        'tour': tour,
+        'dev_mode': _dev_mode(),
+    })
+
+
+@guide_required
+def itinerary_edit(request, tour_pk, item_pk):
+    """
+    Guide dashboard: Edit an existing ItineraryItem.
+
+    GET: Returns pre-filled form partial.
+    POST: Validates, saves, returns updated row partial (HTMX) or redirects.
+
+    Args:
+        tour_pk: Tour PK from URL
+        item_pk: ItineraryItem PK from URL
+
+    ASSUMPTIONS:
+    - Item must belong to this tour (cross-tour editing prevented by the
+      combined get_object_or_404 filter on both pk and tour).
+
+    FAILURE MODES:
+    - Item not found or belongs to another tour: 404
+    - Wrong guide ownership: 403 from _get_tour_for_guide
+    """
+    from django.shortcuts import get_object_or_404
+    from .forms import ItineraryItemForm
+    tour = _get_tour_for_guide(request, tour_pk)
+    # Ensure the item belongs to this tour (prevents cross-tour editing)
+    item = get_object_or_404(ItineraryItem, pk=item_pk, tour=tour)
+
+    if request.method == 'POST':
+        form = ItineraryItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            if request.headers.get('HX-Request'):
+                return render(request, 'admin_panel/tours/partials/itinerary_item_row.html', {
+                    'item': item,
+                    'tour': tour,
+                })
+            return redirect(
+                reverse('dashboard:tour_detail', args=[tour.pk]) + '?tab=itinerary'
+            )
+        if request.headers.get('HX-Request'):
+            return render(request, 'admin_panel/tours/partials/itinerary_item_form.html', {
+                'form': form,
+                'tour': tour,
+                'item': item,
+                'dev_mode': _dev_mode(),
+            })
+    else:
+        form = ItineraryItemForm(instance=item)
+
+    return render(request, 'admin_panel/tours/partials/itinerary_item_form.html', {
+        'form': form,
+        'tour': tour,
+        'item': item,
+        'dev_mode': _dev_mode(),
+    })
+
+
+@guide_required
+def itinerary_delete(request, tour_pk, item_pk):
+    """
+    Guide dashboard: Delete an ItineraryItem.
+
+    Accepts POST or DELETE (HTMX sends DELETE).
+    Returns empty 200 response — HTMX swaps the row out via outerHTML swap.
+
+    Args:
+        tour_pk: Tour PK (used for ownership check)
+        item_pk: ItineraryItem PK to delete
+
+    FAILURE MODES:
+    - Item not found: 404 from get_object_or_404
+    - Wrong tour ownership: 403 from _get_tour_for_guide
+    - Non-POST/DELETE method: 405 Method Not Allowed
+    """
+    from django.shortcuts import get_object_or_404
+    from django.http import HttpResponse
+    tour = _get_tour_for_guide(request, tour_pk)
+    item = get_object_or_404(ItineraryItem, pk=item_pk, tour=tour)
+    if request.method in ('POST', 'DELETE'):
+        item.delete()
+        # Empty response triggers HTMX outerHTML swap removal of the row
+        return HttpResponse('')
+    return HttpResponse(status=405)
+
+
+@guide_required
+def itinerary_reorder(request, tour_pk):
+    """
+    Guide dashboard: Update the order of ItineraryItems after drag-and-drop.
+
+    Accepts JSON body: [{"id": 1, "order": 0}, {"id": 2, "order": 1}, ...]
+    Updates each item's order field. Only processes items belonging to this tour
+    (the filter prevents tampering with other tours' items).
+
+    Args:
+        tour_pk: Tour PK (used for ownership check and item scope filter)
+
+    Returns:
+        JsonResponse {"ok": true} on success
+        JsonResponse {"error": "..."} on invalid input
+
+    ASSUMPTIONS:
+    - Client sends all items for a day in the new order
+    - IDs in payload belong to this tour (enforced by DB filter on tour FK)
+
+    FAILURE MODES:
+    - Invalid JSON body: returns 400 with error message
+    - Non-POST method: returns 405
+    - IDs from other tours: silently ignored due to tour filter in queryset
+    """
+    import json
+    from django.http import JsonResponse
+    tour = _get_tour_for_guide(request, tour_pk)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'method not allowed'}, status=405)
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'error': 'invalid JSON body'}, status=400)
+    # Update each item; filter by tour ensures cross-tour tampering has no effect
+    for entry in data:
+        ItineraryItem.objects.filter(pk=entry['id'], tour=tour).update(order=entry['order'])
+    return JsonResponse({'ok': True})

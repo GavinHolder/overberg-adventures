@@ -1,0 +1,49 @@
+{% comment %}
+Single itinerary item row for the drag-to-reorder list.
+Context: item (ItineraryItem), tour (Tour)
+data-item-id is read by the JS saveOrder function to build the reorder payload.
+{% endcomment %}
+<div class="itinerary-row d-flex align-items-center gap-2 p-2 mb-1 bg-white rounded border"
+     draggable="true"
+     data-item-id="{{ item.pk }}"
+     id="item-{{ item.pk }}">
+
+  {# Drag handle — visual affordance for drag-to-reorder #}
+  <span class="drag-handle text-muted" style="cursor:grab;">
+    <i class="bi bi-grip-vertical"></i>
+  </span>
+
+  {# Item info #}
+  <div class="flex-grow-1" style="min-width:0;">
+    <div class="fw-semibold text-truncate" style="font-size:14px;">{{ item.title }}</div>
+    <div class="text-muted" style="font-size:11px;">
+      {{ item.start_time|time:"H:i" }} &middot; {{ item.duration_display }}
+      {% if item.category %}
+        {# Colour-coded category badge using the category's hex colour #}
+        <span class="badge rounded-pill ms-1"
+              style="background:{{ item.category.colour }};font-size:10px;">
+          {{ item.category.name }}
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Edit and delete action buttons #}
+  <div class="d-flex gap-1 flex-shrink-0">
+    {# Edit: load the form inline via HTMX #}
+    <button class="btn btn-sm btn-link text-warning p-1"
+            hx-get="{% url 'dashboard:itinerary_edit' tour.pk item.pk %}"
+            hx-target="#itinerary-form-slot"
+            hx-swap="innerHTML">
+      <i class="bi bi-pencil"></i>
+    </button>
+    {# Delete: removes this row via HTMX outerHTML swap #}
+    <button class="btn btn-sm btn-link text-danger p-1"
+            hx-delete="{% url 'dashboard:itinerary_delete' tour.pk item.pk %}"
+            hx-confirm="Delete '{{ item.title|escapejs }}'?"
+            hx-target="#item-{{ item.pk }}"
+            hx-swap="outerHTML swap:0.2s">
+      <i class="bi bi-trash"></i>
+    </button>
+  </div>
+</div>

@@ -1,0 +1,69 @@
+{% comment %}
+Inline add/edit form for an ItineraryItem.
+Injected into #itinerary-form-slot via HTMX.
+Context: form (ItineraryItemForm), tour, item (optional — present when editing)
+{% endcomment %}
+<div class="card border p-3" id="itinerary-inline-form">
+  <div class="d-flex align-items-center mb-3">
+    <span class="fw-bold small flex-grow-1">
+      {% if item %}Edit Activity{% else %}New Activity{% endif %}
+    </span>
+    {# Close button: clears the form slot by loading an empty response #}
+    <button type="button"
+            class="btn btn-sm btn-link text-muted p-0"
+            hx-get=""
+            hx-target="#itinerary-form-slot"
+            hx-swap="innerHTML">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+
+  <form method="post"
+        hx-post="{% if item %}{% url 'dashboard:itinerary_edit' tour.pk item.pk %}{% else %}{% url 'dashboard:itinerary_add' tour.pk %}{% endif %}"
+        hx-target="#itinerary-form-slot"
+        hx-swap="innerHTML"
+        novalidate>
+    {% csrf_token %}
+
+    {% for field in form %}
+      {% if not field.is_hidden %}
+      <div class="mb-2">
+        <label class="form-label small fw-semibold mb-1" for="{{ field.id_for_label }}">
+          {{ field.label }}
+        </label>
+        {{ field }}
+        {% if field.errors %}
+          {# Display the first field-level validation error below the input #}
+          <div class="text-danger" style="font-size:11px;">{{ field.errors.0 }}</div>
+        {% endif %}
+      </div>
+      {% else %}
+        {# Render hidden fields (order) without label #}
+        {{ field }}
+      {% endif %}
+    {% endfor %}
+
+    <div class="d-flex gap-2 mt-3">
+      <button type="submit" class="btn btn-sm btn-warning fw-bold flex-fill">
+        {% if item %}Save{% else %}Add Activity{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+/**
+ * Apply Bootstrap form-control classes to the dynamically injected form inputs.
+ * Django renders bare <input>/<select>/<textarea> — Bootstrap needs the class.
+ * Scoped to #itinerary-inline-form to avoid affecting other page elements.
+ */
+document.querySelectorAll(
+  '#itinerary-inline-form input:not([type=checkbox]):not([type=hidden]),' +
+  '#itinerary-inline-form textarea'
+).forEach(function(el) {
+  el.classList.add('form-control', 'form-control-sm');
+});
+document.querySelectorAll('#itinerary-inline-form select').forEach(function(el) {
+  el.classList.add('form-select', 'form-select-sm');
+});
+</script>

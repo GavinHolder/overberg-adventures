@@ -1,5 +1,5 @@
 from django import forms
-from apps.tours.models import Tour
+from apps.tours.models import Tour, ItineraryItem
 
 
 class TourForm(forms.ModelForm):
@@ -72,4 +72,60 @@ class TourForm(forms.ModelForm):
             'name': 'Tour Name',
             'rsvp_deadline_hours': 'RSVP Deadline (hours before start)',
             'min_fitness_level': 'Minimum Fitness Level (1=easy, 5=extreme)',
+        }
+
+
+class ItineraryItemForm(forms.ModelForm):
+    """
+    Form for creating and editing ItineraryItem instances in the itinerary builder.
+
+    Uses a time HTML5 input for mobile-friendly time selection.
+    The 'tour' FK is intentionally excluded — it is set in the view from the URL.
+    The 'order' field is a hidden input so the current position is submitted
+    but not shown as an editable field (reordering is done via drag-and-drop).
+
+    Fields excluded: tour (set in view), location_lat/lng (Phase 7 map picker),
+    distance_km (optional, advanced — can be added later).
+
+    ASSUMPTIONS:
+    1. The caller (view) sets item.tour before saving — this form never sets tour.
+    2. The 'order' value submitted is the item's current position; the reorder
+       endpoint handles position changes after drag-and-drop.
+    3. ActivityCategory queryset is unfiltered — all categories shown to all guides.
+
+    FAILURE MODES:
+    - Missing title/day/start_time → form.is_valid() returns False → re-render.
+    - Invalid time format → field-level error, no DB write.
+    """
+
+    start_time = forms.TimeField(
+        # HTML5 time picker for mobile-friendly HH:MM input
+        widget=forms.TimeInput(attrs={'type': 'time'}),
+        help_text='Activity start time',
+    )
+
+    class Meta:
+        """Define the model, included fields, widget overrides, and human-readable labels."""
+
+        model = ItineraryItem
+        fields = [
+            'title',
+            'description',
+            'category',
+            'day',
+            'order',
+            'start_time',
+            'duration_minutes',
+            'location_name',
+            'difficulty',
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 2}),
+            'day': forms.NumberInput(attrs={'min': 1, 'placeholder': '1'}),
+            # order is submitted hidden — drag-to-reorder controls the visual position
+            'order': forms.HiddenInput(),
+        }
+        labels = {
+            'duration_minutes': 'Duration (minutes)',
+            'location_name': 'Location name',
         }

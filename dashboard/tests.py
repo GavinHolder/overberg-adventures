@@ -4,7 +4,8 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
 from apps.accounts.models import UserProfile
-from apps.tours.models import Tour
+from apps.tours.models import Tour, ItineraryItem, ActivityCategory
+from datetime import time as dtime
 
 User = get_user_model()
 
@@ -364,3 +365,124 @@ class TourDetailTest(TestCase):
         """Without ?tab=, the itinerary tab is active by default."""
         resp = self.client.get(reverse('dashboard:tour_detail', args=[self.tour.pk]))
         self.assertContains(resp, 'itinerary')
+
+
+def make_category(name='Hike'):
+    """Factory: create an ActivityCategory with minimal required fields."""
+    return ActivityCategory.objects.create(name=name, icon='geo-alt', colour='#198754')
+
+
+class ItineraryBuilderTest(TestCase):
+    """
+    Tests for the itinerary builder (Task 27).
+    Covers: add item, HTMX partial response, edit, delete, reorder,
+    and ownership enforcement (guides can't edit other guides' tours).
+    """
+
+    def setUp(self):
+        """Create a guide, log them in, create their tour and a category."""
+        self.guide = make_user('guide@itinerary.com', UserProfile.Role.GUIDE)
+        self.client.force_login(self.guide)
+        self.tour = make_tour(self.guide)
+        self.category = make_category()
+
+    def _item_data(self, title='Morning Hike', day=1, order=0):
+        """Helper: return valid POST data for an ItineraryItem."""
+        return {
+            'title': title,
+            'day': day,
+            'order': order,
+            'start_time': '07:00',
+            'duration_minutes': 120,
+            'category': self.category.pk,
+            'location_name': 'Kogelberg Peak',
+            'description': '',
+            'difficulty': 'MODERATE',
+        }
+
+    def test_add_item_creates_itinerary_item(self):
+        """POST to itinerary_add creates an ItineraryItem linked to the tour."""
+        self.client.post(
+            reverse('dashboard:itinerary_add', args=[self.tour.pk]),
+            self._item_data('Morning Hike'),
+        )
+        self.assertEqual(ItineraryItem.objects.count(), 1)
+        item = ItineraryItem.objects.first()
+        self.assertEqual(item.title, 'Morning Hike')
+        self.assertEqual(item.tour, self.tour)
+
+    def test_add_item_htmx_returns_partial(self):
+        """HTMX request returns the item row partial (not a full page)."""
+        resp = self.client.post(
+            reverse('dashboard:itinerary_add', args=[self.tour.pk]),
+            self._item_data('Beach Walk'),
+            HTTP_HX_REQUEST='true',
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Beach Walk')
+
+    def test_edit_item_updates_title(self):
+        """POST to itinerary_edit updates the item's title in the DB."""
+        item = ItineraryItem.objects.create(
+            tour=self.tour, title='Old Title', day=1, order=0,
+            start_time=dtime(8, 0), duration_minutes=60, difficulty='EASY',
+            category=self.category,
+        )
+        self.client.post(
+            reverse('dashboard:itinerary_edit', args=[self.tour.pk, item.pk]),
+            self._item_data('New Title'),
+        )
+        item.refresh_from_db()
+        self.assertEqual(item.title, 'New Title')
+
+    def test_delete_item_removes_it(self):
+        """DELETE request removes the ItineraryItem and returns 200."""
+        item = ItineraryItem.objects.create(
+            tour=self.tour, title='To Delete', day=1, order=0,
+            start_time=dtime(8, 0), duration_minutes=30, difficulty='EASY',
+        )
+        resp = self.client.delete(
+            reverse('dashboard:itinerary_delete', args=[self.tour.pk, item.pk])
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(ItineraryItem.objects.filter(pk=item.pk).exists())
+
+    def test_reorder_updates_order_field(self):
+        """POST to itinerary_reorder with JSON payload updates item order values."""
+        import json
+        item1 = ItineraryItem.objects.create(
+            tour=self.tour, title='Item 1', day=1, order=0,
+            start_time=dtime(8, 0), duration_minutes=30, difficulty='EASY',
+        )
+        item2 = ItineraryItem.objects.create(
+            tour=self.tour, title='Item 2', day=1, order=1,
+            start_time=dtime(9, 0), duration_minutes=30, difficulty='EASY',
+        )
+        # Swap the order
+        resp = self.client.post(
+            reverse('dashboard:itinerary_reorder', args=[self.tour.pk]),
+            data=json.dumps([
+                {'id': item1.pk, 'order': 1},
+                {'id': item2.pk, 'order': 0},
+            ]),
+            content_type='application/json',
+        )
+        self.assertEqual(resp.status_code, 200)
+        item1.refresh_from_db()
+        item2.refresh_from_db()
+        self.assertEqual(item1.order, 1)
+        self.assertEqual(item2.order, 0)
+
+    def test_guide_cannot_edit_other_tour_item(self):
+        """A guide gets 403 when trying to edit an item on another guide's tour."""
+        other = make_user('other@itinerary.com', UserProfile.Role.GUIDE)
+        other_tour = make_tour(other)
+        item = ItineraryItem.objects.create(
+            tour=other_tour, title='Restricted', day=1, order=0,
+            start_time=dtime(9, 0), duration_minutes=60, difficulty='EASY',
+        )
+        resp = self.client.post(
+            reverse('dashboard:itinerary_edit', args=[other_tour.pk, item.pk]),
+            self._item_data('Hacked'),
+        )
+        self.assertEqual(resp.status_code, 403)

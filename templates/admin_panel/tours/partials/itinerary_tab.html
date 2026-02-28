@@ -1,6 +1,107 @@
-{# Itinerary builder tab — full implementation in Task 27.
-   Context variables available: tour, items_by_day (dict of {day: [ItineraryItem, ...]}) #}
-<div class="text-center text-muted py-4">
-  <i class="bi bi-list-check fs-2 d-block mb-2 opacity-25"></i>
-  <p>Itinerary builder coming soon.</p>
+{% comment %}
+Itinerary builder tab partial.
+Context: tour, items_by_day (dict {day_int: [ItineraryItem, ...]})
+Requires: HTMX, Alpine.js
+{% endcomment %}
+<div id="itinerary-builder">
+  <div class="d-flex align-items-center mb-3">
+    <span class="text-muted small flex-grow-1">Drag rows to reorder within a day.</span>
+    {# Clicking "Add Activity" loads the inline form via HTMX #}
+    <button class="btn btn-sm btn-warning fw-bold"
+            hx-get="{% url 'dashboard:itinerary_add' tour.pk %}"
+            hx-target="#itinerary-form-slot"
+            hx-swap="innerHTML">
+      <i class="bi bi-plus-lg me-1"></i>Add Activity
+    </button>
+  </div>
+
+  {# Slot where the inline add/edit form is injected via HTMX #}
+  <div id="itinerary-form-slot" class="mb-3"></div>
+
+  {% if items_by_day %}
+    {% for day, items in items_by_day.items %}
+    <div class="mb-3">
+      <div class="fw-bold small text-muted mb-2 text-uppercase" style="letter-spacing:.5px;">
+        Day {{ day }}
+      </div>
+      {# Alpine.js sortable wrapper — enables drag-to-reorder within each day group #}
+      <div id="day-{{ day }}-list" class="sortable-list">
+        {% for item in items %}
+          {% include 'admin_panel/tours/partials/itinerary_item_row.html' with item=item tour=tour only %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="text-center text-muted py-4">
+      <i class="bi bi-list-check fs-2 d-block mb-2 opacity-25"></i>
+      <p>No activities yet. Add your first one above.</p>
+    </div>
+  {% endif %}
 </div>
+
+<script>
+/**
+ * Initialise drag-to-reorder for all sortable lists on the itinerary tab.
+ * Uses native HTML5 drag events — no library dependency.
+ * On drop, sends a POST to /guide/tours/{tourPk}/itinerary/reorder/ with
+ * the new order as a JSON array.
+ */
+(function initSortable() {
+  var tourPk = {{ tour.pk }};
+
+  document.querySelectorAll('.sortable-list').forEach(function(list) {
+    var dragging = null;
+
+    list.addEventListener('dragstart', function(e) {
+      dragging = e.target.closest('.itinerary-row');
+      if (dragging) dragging.style.opacity = '0.5';
+    });
+
+    list.addEventListener('dragend', function(e) {
+      if (dragging) {
+        dragging.style.opacity = '';
+        // Save the new order after every drop
+        saveOrder(list, tourPk);
+      }
+      dragging = null;
+    });
+
+    list.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      var row = e.target.closest('.itinerary-row');
+      if (row && dragging && row !== dragging) {
+        var rect = row.getBoundingClientRect();
+        var mid = rect.top + rect.height / 2;
+        // Insert before or after based on cursor position relative to row midpoint
+        if (e.clientY < mid) {
+          list.insertBefore(dragging, row);
+        } else {
+          list.insertBefore(dragging, row.nextSibling);
+        }
+      }
+    });
+  });
+
+  /**
+   * Read current row order from DOM and POST to reorder endpoint.
+   * @param {HTMLElement} list - The sortable list container
+   * @param {number} tourPk - Tour primary key for the endpoint URL
+   */
+  function saveOrder(list, tourPk) {
+    var rows = list.querySelectorAll('.itinerary-row[data-item-id]');
+    var payload = Array.from(rows).map(function(row, idx) {
+      return { id: parseInt(row.dataset.itemId, 10), order: idx };
+    });
+    fetch('/guide/tours/' + tourPk + '/itinerary/reorder/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // CSRF token extracted from cookie
+        'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+}());
+</script>
