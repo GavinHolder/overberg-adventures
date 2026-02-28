@@ -592,21 +592,116 @@ def tour_delete(request, pk):
 @guide_required
 def tour_qr(request, pk):
     """
-    Stub: QR code view for a tour (not yet implemented).
+    Guide dashboard: Display the QR code page for a tour.
 
-    Fetches the Tour by primary key (404 if not found) and renders the list
-    template with that single tour so the URL resolves. A real implementation
-    will generate and display a QR code linking to the guest RSVP flow for
-    the tour's unique tour code.
+    Shows the QR code image (from tour_qr_png endpoint), the tour code in text,
+    and buttons to download the PNG and share the join URL.
+
+    The join URL encoded in the QR points to the tour code lookup page
+    pre-filled with the tour code, so guests can scan and land directly on
+    the confirm page.
 
     Args:
-        pk: Primary key of the Tour whose QR code should be shown.
+        pk: Tour primary key
 
-    Access: guide-level users and staff (enforced by @guide_required).
+    ASSUMPTIONS:
+    - The join lookup URL is at /app/join/ (bookings:join_lookup).
+    - Guides can only view their own tours' QR codes; ownership is enforced here.
+
+    FAILURE MODES:
+    - Tour not found: 404 via get_object_or_404.
+    - Guide accesses another guide's tour: 403 PermissionDenied.
     """
     from django.shortcuts import get_object_or_404
     tour = get_object_or_404(Tour, pk=pk)
-    return render(request, 'admin_panel/tours/list.html', {'tours': [tour], 'dev_mode': _dev_mode()})
+
+    # Ownership check: GUIDE role users can only view their own tours' QR codes.
+    # Staff and OPERATOR/ADMIN roles bypass this check and see all tours.
+    profile = getattr(request.user, 'profile', None)
+    if not request.user.is_staff and profile and profile.role == 'GUIDE':
+        if tour.guide != request.user:
+            raise PermissionDenied
+
+    # Build the full join URL that gets encoded into the QR code.
+    # Pre-fills the tour code so guests land directly on the confirm step.
+    join_url = request.build_absolute_uri(
+        reverse('bookings:join_lookup') + f'?code={tour.tour_code}'
+    )
+
+    return render(request, 'admin_panel/tours/qr.html', {
+        'tour': tour,
+        'join_url': join_url,
+        # URL for the <img> src tag that fetches the generated PNG
+        'qr_url': reverse('dashboard:tour_qr_png', args=[pk]),
+        'dev_mode': _dev_mode(),
+    })
+
+
+@guide_required
+def tour_qr_png(request, pk):
+    """
+    Guide dashboard: Serve a QR code PNG image for a tour's join URL.
+
+    Generates a QR code image on the fly using the qrcode library.
+    The QR encodes the full absolute join URL including the tour code.
+    Uses dark green fill (#1a3a2a) on white background — matches brand colours.
+
+    Args:
+        pk: Tour primary key
+
+    Returns:
+        HttpResponse with image/png content type
+
+    ASSUMPTIONS:
+    - qrcode[pil] is installed (Pillow is a dependency for PNG output).
+    - Box size 8 with border 3 produces a scannable ~200px image.
+    - Guides can only view their own tours' QR PNGs (same ownership rule as tour_qr).
+
+    FAILURE MODES:
+    - qrcode not installed: ImportError at runtime — add to requirements.txt.
+    - Tour not found: 404 via get_object_or_404.
+    - Guide accesses another guide's tour: 403 PermissionDenied.
+    """
+    import qrcode
+    import io
+    from django.http import HttpResponse
+    from django.shortcuts import get_object_or_404
+
+    tour = get_object_or_404(Tour, pk=pk)
+
+    # Ownership check (same as tour_qr view — defence in depth).
+    # Both endpoints must independently verify ownership because either
+    # can be hit directly via URL without going through the other.
+    profile = getattr(request.user, 'profile', None)
+    if not request.user.is_staff and profile and profile.role == 'GUIDE':
+        if tour.guide != request.user:
+            raise PermissionDenied
+
+    # Build the join URL to encode into the QR code image
+    join_url = request.build_absolute_uri(
+        reverse('bookings:join_lookup') + f'?code={tour.tour_code}'
+    )
+
+    # Generate QR code — box_size=8 gives a good resolution for display and print;
+    # ERROR_CORRECT_M allows 15% data recovery, suitable for logos overlaid on QR.
+    qr = qrcode.QRCode(
+        box_size=8,
+        border=3,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+    )
+    qr.add_data(join_url)
+    # fit=True selects the minimum version (size) to encode all data
+    qr.make(fit=True)
+
+    # Render to PNG using brand dark green on white background
+    img = qr.make_image(fill_color='#1a3a2a', back_color='white')
+
+    # Write to in-memory buffer — no temp file needed, avoids disk I/O
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)  # rewind so read() returns from the start
+
+    return HttpResponse(buf.read(), content_type='image/png')
 
 
 # ---------------------------------------------------------------------------

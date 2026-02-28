@@ -23,6 +23,9 @@ django-webpush==0.3.6
 # Rate limiting
 django-ratelimit==4.1.0
 
+# QR code generation
+qrcode[pil]>=7.4
+
 # Dev
 django-debug-toolbar==6.2.0
 pytest-django==4.9.0

@@ -709,3 +709,45 @@ class GuidesTabTest(TestCase):
         op.profile.save()
         resp = self.client.get(reverse('dashboard:guides_list'))
         self.assertContains(resp, 'OpUser')
+
+
+class QRCodeTest(TestCase):
+    """
+    Tests for QR code generation per tour (Task 31).
+    Covers: QR page renders, shows tour code, PNG endpoint returns image.
+    """
+
+    def setUp(self):
+        """Create a guide, log them in, and create their tour."""
+        self.guide = make_user('guide@qr.com', UserProfile.Role.GUIDE)
+        self.client.force_login(self.guide)
+        self.tour = make_tour(self.guide, 'QR Tour')
+
+    def test_qr_page_returns_200(self):
+        """The QR code page renders successfully."""
+        resp = self.client.get(reverse('dashboard:tour_qr', args=[self.tour.pk]))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_qr_page_contains_tour_code(self):
+        """The QR page displays the tour code in text."""
+        resp = self.client.get(reverse('dashboard:tour_qr', args=[self.tour.pk]))
+        self.assertContains(resp, self.tour.tour_code)
+
+    def test_qr_png_endpoint_returns_png_image(self):
+        """The /qr.png endpoint returns a PNG image with correct content type."""
+        resp = self.client.get(reverse('dashboard:tour_qr_png', args=[self.tour.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp['Content-Type'], 'image/png')
+
+    def test_qr_png_response_is_non_empty(self):
+        """The PNG response has actual image data (not an empty body)."""
+        resp = self.client.get(reverse('dashboard:tour_qr_png', args=[self.tour.pk]))
+        # Real PNG is much larger than 100 bytes; empty body would fail this check
+        self.assertGreater(len(resp.content), 100)
+
+    def test_guide_cannot_access_other_guide_qr(self):
+        """A guide gets 403 when accessing another guide's QR code page."""
+        other = make_user('other@qr.com', UserProfile.Role.GUIDE)
+        other_tour = make_tour(other, 'Other QR Tour')
+        resp = self.client.get(reverse('dashboard:tour_qr', args=[other_tour.pk]))
+        self.assertEqual(resp.status_code, 403)
