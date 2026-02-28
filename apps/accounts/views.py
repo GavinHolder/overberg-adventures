@@ -349,8 +349,10 @@ def logout_view(request):
 
 @login_required
 def profile_view(request):
-    from django.conf import settings as django_settings
+    profile = request.user.profile
+    fitness_labels = {1: 'Unfit', 2: 'Below Average', 3: 'Average', 4: 'Fit', 5: 'Very Fit'}
     return render(request, 'accounts/profile.html', {
-        'profile': request.user.profile,
-        'dev_mode': getattr(django_settings, 'DEV_MODE', False),
+        'profile': profile,
+        'fitness_label': fitness_labels.get(profile.fitness_level, '—'),
+        'dev_mode': getattr(settings, 'DEV_MODE', False),
     })

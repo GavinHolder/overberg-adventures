@@ -1,0 +1,24 @@
+<div class="card-oa mb-3">
+  <div class="d-flex align-items-center mb-3">
+    <i class="bi bi-person text-primary me-2"></i>
+    <span class="fw-bold">Personal Details</span>
+  </div>
+  <div class="info-grid">
+    <div class="info-item">
+      <span class="label-xs">FULL NAME</span>
+      <span class="fw-semibold">{{ profile.full_name }}</span>
+    </div>
+    {% if profile.date_of_birth %}
+    <div class="info-item">
+      <span class="label-xs">DATE OF BIRTH</span>
+      <span class="fw-semibold">{{ profile.date_of_birth|date:"j F Y" }}</span>
+    </div>
+    {% endif %}
+    {% if profile.phone_whatsapp %}
+    <div class="info-item">
+      <span class="label-xs">PHONE / WHATSAPP</span>
+      <span class="fw-semibold">{{ profile.phone_whatsapp }}</span>
+    </div>
+    {% endif %}
+  </div>
+</div>

@@ -1,0 +1,12 @@
+<div class="profile-header-card mx-3 mb-4 text-center">
+  {% if profile.avatar %}
+    <img src="{{ profile.avatar.url }}" class="profile-avatar-img mb-3" alt="avatar">
+  {% else %}
+    <div class="profile-avatar-circle mx-auto mb-3">{{ profile.initials|upper }}</div>
+  {% endif %}
+  <h1 class="fw-bold text-white mb-1" style="font-size:1.4rem">{{ profile.full_name }}</h1>
+  <p class="mb-3" style="color:rgba(255,255,255,0.8);font-size:0.95rem">{{ profile.get_role_display }}</p>
+  <a href="{% url 'accounts:profile_setup_step' step=1 %}" class="profile-edit-btn">
+    <i class="bi bi-pencil me-2"></i>Edit Profile
+  </a>
+</div>

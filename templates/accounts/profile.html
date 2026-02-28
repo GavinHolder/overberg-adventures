@@ -1,2 +1,24 @@
 {% extends 'base_app.html' %}
-{% block content %}<div class="p-4">Profile stub</div>{% endblock %}
+{% load static %}
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="pb-4">
+
+  {% include 'accounts/partials/profile_header.html' with profile=profile only %}
+
+  <div class="px-3">
+    {% include 'accounts/partials/profile_personal.html' with profile=profile only %}
+    {% include 'accounts/partials/profile_health.html' with profile=profile fitness_label=fitness_label only %}
+    {% include 'accounts/partials/profile_notes.html' with profile=profile only %}
+    {% include 'accounts/partials/profile_settings.html' with profile=profile only %}
+  </div>
+
+  {% if dev_mode %}
+  <div class="mx-3 mt-3 p-3 rounded-3" style="background:#FEF3C7;border:1.5px solid #F59E0B">
+    <small class="fw-bold text-warning-emphasis">DEV MODE — Profile View</small>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

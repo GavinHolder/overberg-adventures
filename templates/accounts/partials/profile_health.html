@@ -1,0 +1,20 @@
+<div class="card-oa mb-3">
+  <div class="d-flex align-items-center mb-3">
+    <i class="bi bi-heart-pulse text-danger me-2"></i>
+    <span class="fw-bold">Health &amp; Diet</span>
+  </div>
+  <div class="info-grid">
+    <div class="info-item">
+      <span class="label-xs">FITNESS LEVEL</span>
+      <span class="fw-semibold">{{ fitness_label }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label-xs">MEDICAL INFORMATION</span>
+      <span class="fw-semibold">{{ profile.medical_conditions|default:"None" }}</span>
+    </div>
+    <div class="info-item">
+      <span class="label-xs">DIETARY REQUIREMENTS</span>
+      <span class="fw-semibold">{{ profile.dietary_requirements|default:"None" }}</span>
+    </div>
+  </div>
+</div>
