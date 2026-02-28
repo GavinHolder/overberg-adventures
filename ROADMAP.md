@@ -11,47 +11,53 @@ Status key: `[ ]` Not started · `[~]` In progress · `[x]` Complete
 - [x] **Phase 3** — Authentication (email OTP, Google/Facebook OAuth, 5-step profile wizard)
 - [x] **Phase 4** — Tours system (ActivityCategory, Tour, ItineraryItem, TourCodeWord, seed data)
 - [x] **Phase 5** — Bookings + Payment adapter (RSVP flow, capacity enforcement, adapter ABC)
+- [x] **Phase 6** — PWA Core Screens (Tasks 15-22 complete, 57 tests passing)
 
 ---
 
 ## Upcoming
 
-### Phase 6 — PWA Core Screens
-Build all PWA-facing templates with pixel-perfect match to the 15 UI reference screenshots.
+### Phase 6 — PWA Core Screens ✅ COMPLETE
 
-- [ ] **Task 15** — Base template + bottom nav + PWA shell
-  - `templates/base_app.html` (vendor assets from CDN or local static)
-  - `static/manifest.json` (PWA installability)
-  - `static/js/service-worker.js` (cache-first, offline fallback)
-  - Bootstrap 5.3 vendor files in `static/vendor/`
+- [x] **Task 15** — PWA assets + base_app.html blocks
+  - `static/manifest.json` · `static/js/service-worker.js` (network-first)
+  - SW served from root `/service-worker.js` via Django view (correct scope)
+  - `{% block main_class %}` + `{% block bottom_nav %}` template overrides
 
-- [ ] **Task 16** — Home screen
+- [x] **Task 16** — URL wiring + stub views
+  - All PWA routes wired; `LOGIN_REDIRECT_URL = '/'`; SPA shell templates
+
+- [x] **Task 17** — Home screen
   - No-tours state: logo, "Welcome [Name]", tour code entry form
-  - With-tours state: "My Tours" list with status badges (RSVP Pending / Confirmed / Completed)
-  - HTMX tour code lookup + join flow
+  - With-tours state: "My Tours" list with status badges
+  - SPA shell + `home_hero.html` + `home_tour_list.html` + `tour_card.html` partials
 
-- [ ] **Task 17** — Itinerary viewer
-  - Satellite map banner (Google Maps embed or static image placeholder until Phase 7)
-  - RSVP status banner
-  - Day-grouped activity timeline cards (category colour + icon, time, duration, difficulty badge)
+- [x] **Task 18** — Tour code join flow
+  - POST lookup → redirect to confirm page → POST creates Booking
+  - SPA shell + `join_header.html` + `join_user_card.html` partials
 
-- [ ] **Task 18** — Map tab (full-screen)
-  - Full-screen Google Maps satellite view placeholder
-  - Activity markers (colour-coded circles by category)
-  - "View Itinerary" pull-up drawer
+- [x] **Task 19** — Itinerary screen
+  - Day-grouped timeline (sorted by `item.day` integer); Alpine.js collapsible sections
+  - RSVP status banner (INVITED / RSVP_PENDING states); Google Maps placeholder banner
+  - SPA shell + `itinerary_header.html` + `itinerary_day.html` + `activity_item.html` partials
+  - Hex colour validator on `ActivityCategory.colour`
 
-- [ ] **Task 19** — Profile tab
-  - Orange header card with avatar + name + role
-  - Personal details section (read + edit)
-  - Health info section
-  - Personal notes
-  - Settings tab (Location + Notification toggles)
+- [x] **Task 20** — SOS screen
+  - WhatsApp deep-link with GPS coords to guide (`navigator.geolocation`, `escapejs` XSS guard)
+  - SA emergency numbers: SAPS 10111 · Ambulance 10177 · NSRI · Mountain Rescue · Fire · 112
+  - Offline First Aid guides: Snake Bite, Broken Bone, Heart Attack, Fainting, Drowning, Burns
+  - Confirmation dialogs before all calls/sends; 10s geolocation timeout
+  - `SosConfig` singleton + `EmergencyContact` model; all sections admin-toggleable
 
-- [ ] **Task 20** — SOS screen
-  - Emergency call button
-  - Live GPS share link
-  - Emergency contacts list
-  - All SOS options toggleable by superuser
+- [x] **Task 21** — Map screen
+  - Full-screen container; activates Google Maps JS when `GOOGLE_MAPS_API_KEY` set
+  - Satellite view default, zoom 13; dark-green placeholder when no key
+  - "VIEW ITINERARY" pill button when active booking present
+
+- [x] **Task 22** — Profile screen
+  - Orange gradient header card: avatar/initials, full name, role display, Edit Profile link
+  - Personal details, Health & Diet, Notes, App Settings (HTMX-wired toggles)
+  - SPA shell + 5 partials; DEV MODE banner
 
 ---
 
@@ -60,10 +66,13 @@ Full Google Maps JavaScript API v3 integration.
 
 - [ ] GCP project setup + API key (restricted to domain/IP)
 - [ ] Satellite view as default for all map instances
-- [ ] Activity markers — colour-coded circles by category; info windows on tap
+- [ ] Activity markers — colour-coded by category; info window (title, time, location) on tap
+- [ ] GPS coordinate picker modal in itinerary builder (admin side)
 - [ ] Tour area polygon overlay (stored as GeoJSON in `Tour.polygon`)
 - [ ] Walking/driving route polyline from `MapRouteWaypoint` ordered points
-- [ ] Admin map drawing UI — draw polygons and plan routes visually (Leaflet.draw or Maps Drawing API)
+- [ ] Admin map drawing UI — draw polygons and plan routes visually (Maps Drawing API)
+- [ ] Guest GPS location sharing — opt-in toggle; sends real-time coords to guide's manifest view
+- [ ] Live guest map (guide side) — see all opted-in guests as pins on map during active tour
 
 ---
 
@@ -77,20 +86,43 @@ Web Push (PWA-native) with dynamic notification manager.
 - [ ] Notification manager (backend): create custom notifications, link to bookings/itineraries/users, tag system, time/date scheduling
 - [ ] FCM integration for Android Chrome reliability
 - [ ] Celery Beat scheduled task for time-based notifications
+- [ ] Smart schedule alerts — "Your next activity starts in 15 minutes" via Celery + push (based on itinerary times)
 
 ---
 
-### Phase 9 — Backend Admin Panel (Mobile-Optimised)
-Custom Django admin panel, not the default admin. Mobile-first, guide + operator access.
+### Phase 9 — Guide Dashboard (Mobile-Optimised Admin Panel)
+Custom mobile-first dashboard for guides and operators. Not the default Django admin.
+4 management tabs: Tours · Activities · Guests · Guides
 
 - [ ] Mobile-optimised base template (`templates/admin_panel/`)
-- [ ] Tour management: create/edit tours, set parameters, assign guides
-- [ ] Itinerary builder: add/reorder activity items, set category/time/location/difficulty
-- [ ] User management: view/edit guests, manage roles and permissions
-- [ ] Booking management: view RSVPs, confirm/cancel bookings, manual tour code assignment
-- [ ] Map drawing interface: draw tour area polygons and route waypoints visually
-- [ ] Guide permissions toggle (superuser controls what guides can see)
+- [ ] **Tours tab** — create/edit/delete tours; tour cards (name, dates, guest count, activity count, status)
+  - QR code generation per tour (scannable + shareable join URL)
+  - Map Picker modal for GPS coordinate input on tour/activity items
+  - Cascading delete (itinerary items, bookings, photos)
+  - Tour Templates — clone an existing tour for repeat routes
+- [ ] **Itinerary Builder** (per tour) — add/edit/delete/reorder activity items
+  - Hierarchical: Activities → Steps/Checkpoints as parent-child
+  - Drag-to-reorder by day and time (HTMX + Alpine.js sortable)
+  - GPS coordinate picker per stop (integrates Phase 7 map picker)
+- [ ] **Activities tab** — Activity Library: reusable templates (e.g., "Shark Cage Diving", "Wine Tasting")
+  - Create/edit/delete activity templates; name, description, category, type, icon, pricing info
+  - Custom activity type creation
+  - Activity Picker modal for itinerary builder
+- [ ] **Guests tab** — aggregated guest list across all tours
+  - Guest Manifest per tour: enrollment status, RSVP/attendance tracking, medical/dietary/contact info
+  - Edit guest details; delete guest (atomic removal); promote guest to assistant-guide role
+  - Attendance confirmation counts (headcount without manual roll call)
+- [ ] **Guides tab** — list/edit/delete guide accounts; role management (admin, lead-guide, guide, assistant, partner, host)
+  - Multi-guide assignment per tour with role-based permissions (lead vs assistant)
+- [ ] **Photo Gallery** (per tour) — guide uploads photos
+  - Client-side image compression before upload (max 1200px, 80% JPEG via Pillow/JS)
+  - Lightbox viewer; delete photo; photos organised by tour + optionally by activity
+  - Bulk photo upload after tour
+- [ ] Booking management: view RSVPs, confirm/cancel, manual tour code assignment
+- [ ] Revenue overview: bookings, payments, per-tour summary (charts via Chart.js)
+- [ ] Guide permissions toggle (superuser controls what guides can see — health data, contacts, financial, notes)
 - [ ] Notification manager UI (see Phase 8)
+- [ ] PDF export — guest manifest, itinerary, waiver records, post-tour summary
 - [ ] "DEV MODE ACTIVE" banner visible when `DEV_MODE=True`
 
 ---
@@ -118,15 +150,19 @@ Separate marketing page from the PWA.
 
 ---
 
-### Phase 12 — NFC Check-In
-Web NFC API for tour check-in and activity tagging.
+### Phase 12 — NFC + QR Scanner
+Web NFC API for tour check-in and QR code join flow.
 
+- [ ] **QR Scanner** — guest scans tour QR code to join (primary; works iOS + Android)
+  - JS-based QR scanner in PWA (e.g., `jsQR` library); no native app required
+  - Scan → tour code extracted → same join_lookup flow as text entry
 - [ ] `apps/nfc/models.py` — `NFCTag` model (booking/activity link)
-- [ ] Web NFC API write (guide tags NFC chip with booking ID)
-- [ ] Web NFC API read (guest taps → check-in registered)
+- [ ] Web NFC API write (guide writes tour join URL + tour code to NFC tag via dashboard)
+- [ ] Web NFC API read (guest taps tag → instant enrollment, skipping camera/QR entirely)
+- [ ] Activity check-in NFC tags (each waypoint tag encodes tour ID + item ID → confirms attendance)
+- [ ] Medical wristbands — write guest name, emergency contact, allergies, blood type to NFC tag during onboarding; any first responder can tap to read
 - [ ] QR code fallback for iOS (Web NFC is Android Chrome only — documented limitation)
 - [ ] NFC tap simulation button in DEV_MODE
-- [ ] Extensible hook for future payment NFC (Phase 10+ or post-MVP)
 
 ---
 
@@ -168,6 +204,34 @@ Service worker, offline support, and production readiness.
 
 ---
 
+### Phase 16 — Weather Widget
+OpenWeatherMap integration for guests during active tours.
+
+- [ ] OpenWeatherMap One Call API 3.0 integration via Celery task (async fetch)
+- [ ] `apps/tours/models.py` — `WeatherCache` model (location, data JSON, fetched_at, expires_at)
+- [ ] Current conditions widget: temp, humidity, wind, weather description + icon
+- [ ] 5-day forecast with daily breakdowns; date-specific forecast for upcoming activity days
+- [ ] 30-minute cache via Celery to reduce API calls; stale cache fallback when offline
+- [ ] Weather widget partial rendered via HTMX on itinerary page
+
+### Phase 17 — Guest Experience Enhancements
+
+- [ ] **Offline itinerary cache** — full offline access via service worker + IndexedDB fallback
+- [ ] **Tour ratings & reviews** — post-tour feedback form (star rating + comments); visible in admin
+- [ ] **Trip Memory Album** — guide + guest photos auto-collected into tour album view
+- [ ] **Accessibility** — screen reader support, high-contrast mode, text-size adjustments
+- [ ] **Offline indicator banner** — visual banner when network connectivity is lost
+- [ ] **PWA install prompt** — custom "Add to Home Screen" prompt (BeforeInstallPrompt)
+- [ ] **Auto-update banner** — prompt users when new service worker version available
+
+### Phase 18 — Compliance + Data Management
+
+- [ ] **Waiver versioning** — track template versions; prompt re-signing if terms change
+- [ ] **POPIA/GDPR compliance** — data export (guest downloads own data), account deletion, consent management
+- [ ] **Geo-fencing alerts** — guide notified via push if a guest leaves predefined safe zone (Celery + GPS)
+
+---
+
 ## Post-MVP / Future
 
 | Feature | Notes |
@@ -178,9 +242,14 @@ Service worker, offline support, and production readiness.
 | S3 file storage | Upgrade from local static to S3-compatible after MVP |
 | DRF API | Add Django REST Framework if native mobile app needed post-MVP |
 | Multi-language | English only for MVP; Afrikaans + Xhosa planned |
-| Offline itinerary | Full offline-first support with service worker caching |
+| In-app chat | Django Channels WebSocket — replace WhatsApp group dependence |
+| Real-time guest map | Guide sees all opted-in guest positions live during tour |
+| Public tour marketplace | Discoverable listing of tours for direct-to-consumer bookings |
+| Referral programme | Guest referral links for discounts on future tours |
+| White-label mode | Per-operator branding (logo, colours, custom domain) |
 | Group bookings | Single booking covering multiple guests |
-| Live guide tracking | Real-time GPS share from guide to guests during tour |
+| Live guide tracking | Real-time GPS share from guide to all guests during tour |
+| SOS to emergency services | Direct dispatch integration beyond WhatsApp |
 
 ---
 
