@@ -14,7 +14,7 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if google_maps_api_key and tour %}
+{% if google_maps_api_key %}
 <script>
 function initMap() {
   const map = new google.maps.Map(document.getElementById('map'), {
