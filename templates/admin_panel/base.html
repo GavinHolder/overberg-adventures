@@ -24,28 +24,32 @@
     <a href="/" class="text-white-50 small"><i class="bi bi-box-arrow-right"></i></a>
   </header>
 
-  <nav class="dashboard-tabs d-flex border-bottom">
-    <a href="{% url 'dashboard:tours_list' %}"
-       class="dash-tab flex-fill text-center py-2 {% block tab_tours %}{% endblock %}">
-      <i class="bi bi-map d-block fs-5"></i><span class="small">Tours</span>
-    </a>
-    <a href="{% url 'dashboard:activities_list' %}"
-       class="dash-tab flex-fill text-center py-2 {% block tab_activities %}{% endblock %}">
-      <i class="bi bi-lightning d-block fs-5"></i><span class="small">Activities</span>
-    </a>
-    <a href="{% url 'dashboard:guests_list' %}"
-       class="dash-tab flex-fill text-center py-2 {% block tab_guests %}{% endblock %}">
-      <i class="bi bi-people d-block fs-5"></i><span class="small">Guests</span>
-    </a>
-    <a href="{% url 'dashboard:guides_list' %}"
-       class="dash-tab flex-fill text-center py-2 {% block tab_guides %}{% endblock %}">
-      <i class="bi bi-person-badge d-block fs-5"></i><span class="small">Guides</span>
-    </a>
-  </nav>
+  <div class="dash-layout">
 
-  <main class="dashboard-main" id="dashboard-content">
-    {% block content %}{% endblock %}
-  </main>
+    <nav class="dashboard-tabs d-flex border-bottom">
+      <a href="{% url 'dashboard:tours_list' %}"
+         class="dash-tab flex-fill text-center py-2 {% block tab_tours %}{% endblock %}">
+        <i class="bi bi-map d-block fs-5"></i><span class="small">Tours</span>
+      </a>
+      <a href="{% url 'dashboard:activities_list' %}"
+         class="dash-tab flex-fill text-center py-2 {% block tab_activities %}{% endblock %}">
+        <i class="bi bi-lightning d-block fs-5"></i><span class="small">Activities</span>
+      </a>
+      <a href="{% url 'dashboard:guests_list' %}"
+         class="dash-tab flex-fill text-center py-2 {% block tab_guests %}{% endblock %}">
+        <i class="bi bi-people d-block fs-5"></i><span class="small">Guests</span>
+      </a>
+      <a href="{% url 'dashboard:guides_list' %}"
+         class="dash-tab flex-fill text-center py-2 {% block tab_guides %}{% endblock %}">
+        <i class="bi bi-person-badge d-block fs-5"></i><span class="small">Guides</span>
+      </a>
+    </nav>
+
+    <main class="dashboard-main" id="dashboard-content">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div><!-- /.dash-layout -->
 
   <div id="htmx-modal-target"></div>
 

@@ -518,3 +518,45 @@ body {
 }
 .info-grid { display: flex; flex-direction: column; gap: 14px; }
 .info-item { display: flex; flex-direction: column; gap: 2px; }
+
+/* ─── Desktop responsive: center PWA content ─────────────────────────── */
+/*
+ * On screens >= 640px the PWA content is centred in a 480 px column so it
+ * looks intentional rather than stretched.  The map screen is full-screen
+ * and excluded via its .map-page class.  The bottom-nav is pinned to the
+ * same 480 px column so icons line up with the content above.
+ */
+@media (min-width: 640px) {
+
+  /* ── Home screen ── */
+  .home-page {
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.10);
+    position: relative;
+    z-index: 0;
+  }
+
+  /* ── All authenticated pages that use the standard bottom-nav layout ── */
+  #main-content.page-with-nav {
+    max-width: 480px;
+    margin: 0 auto;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.10);
+  }
+
+  /* ── Bottom nav: pin to same 480 px column ── */
+  .bottom-nav {
+    max-width: 480px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+  }
+
+  /* ── Login / auth pages ── */
+  #main-content:not(.page-with-nav):not(.map-page) {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+}

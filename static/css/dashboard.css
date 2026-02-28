@@ -166,3 +166,74 @@
 }
 
 .fab-add:hover { color: #fff; transform: scale(1.08); }
+
+/* ─── Desktop responsive: sidebar layout (md+) ──────────────────────── */
+/*
+ * On screens >= 768px the vertical tab-bar becomes a left sidebar.
+ * The main content area expands to fill the remaining width up to 1200 px.
+ * Mobile layout (tabs on top, full-width cards) is unchanged below 768 px.
+ */
+@media (min-width: 768px) {
+
+  /* Outer wrapper: horizontal flex, centred, max 1200 px */
+  .dash-layout {
+    display: flex;
+    align-items: flex-start;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 52px);
+  }
+
+  /* Sidebar nav: vertical column, sticky below the header */
+  .dashboard-tabs {
+    flex-direction: column;
+    width: 180px;
+    min-width: 180px;
+    min-height: calc(100vh - 52px);
+    position: sticky;
+    top: 52px;
+    border-right: 1px solid #dee2e6;
+    border-bottom: none;
+    box-shadow: none;
+    background: #fff;
+    z-index: 10;
+  }
+
+  /* Each tab: left-aligned with left-border active indicator */
+  .dash-tab {
+    text-align: left !important;
+    padding: 14px 20px;
+    border-bottom: none !important;
+    border-left: 3px solid transparent;
+    border-bottom-color: transparent !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dash-tab:hover,
+  .dash-tab.active {
+    border-left-color: #F97316;
+    border-bottom-color: transparent !important;
+    background: rgba(249, 115, 22, 0.06);
+  }
+
+  /* Override d-block on icons so they sit inline with label */
+  .dash-tab i {
+    display: inline !important;
+    font-size: 1.1rem;
+  }
+
+  /* Label text: visible inline */
+  .dash-tab span.small {
+    display: inline;
+    font-size: 14px;
+  }
+
+  /* Main content: flex-grow, reasonable max-width */
+  .dashboard-main {
+    flex: 1;
+    max-width: 960px;
+    padding: 20px 28px;
+  }
+}

@@ -63,14 +63,14 @@
     <a href="{% url 'dashboard:tour_qr' tour.pk %}" class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-qr-code"></i>
     </a>
-    {#
+    {% comment %}
       HTMX delete button:
       - hx-delete sends a DELETE request to the tour_delete endpoint.
       - hx-confirm shows a browser confirm dialog before sending the request.
       - hx-target selects this entire card div by its unique ID.
       - hx-swap="outerHTML swap:0.3s" replaces the card with the empty response body,
         effectively removing it from the DOM with a 300 ms fade transition.
-    #}
+    {% endcomment %}
     <button class="btn btn-sm btn-outline-danger"
             hx-delete="{% url 'dashboard:tour_delete' tour.pk %}"
             hx-confirm="Delete {{ tour.name|escapejs }}? This will also delete all itinerary items and bookings."
