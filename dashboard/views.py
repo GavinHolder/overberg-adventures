@@ -40,39 +40,70 @@ def index(request):
 @guide_required
 def tours_list(request):
     """
-    Render the tour management list view.
+    Guide dashboard: Tours tab — list all accessible tours with stats.
 
     Behaviour differs by role:
-    - Staff and OPERATOR/ADMIN roles: see ALL tours across all guides, ordered
-      newest-first by start datetime.
-    - GUIDE role: filtered to only their own tours (guide=request.user), so a
-      guide cannot view or manage another guide's bookings.
+    - GUIDE role: restricted to the logged-in guide's own tours only, so
+      no guide can view or manage another guide's bookings or guest data.
+    - OPERATOR, ADMIN (UserProfile role), staff (is_staff): see ALL tours
+      across all guides, ordered newest-first by start datetime.
+
+    Annotates each tour with:
+    - guest_count: number of RSVP_PENDING or CONFIRMED bookings (active
+      bookings only — cancelled bookings are excluded from the count).
+    - activity_count: total number of ItineraryItems linked to the tour.
+
+    Both counts are computed in a single database round-trip using Django's
+    conditional Count + Q annotation — no Python-level looping required.
 
     Context:
-    - tours: QuerySet of Tour objects with guide + profile pre-fetched to avoid
-      N+1 queries in the template.
-    - dev_mode: bool — controls DEV_MODE banner and simulate buttons in template.
+    - tours: Annotated QuerySet (guest_count, activity_count on each tour).
+    - dev_mode: bool — controls DEV_MODE banner / simulate buttons in template.
 
     Access: guide-level users and staff (enforced by @guide_required).
 
     ASSUMPTIONS:
-    - Tour.guide is a ForeignKey to AUTH_USER_MODEL (the guide who owns the tour).
-    - UserProfile is accessible via request.user.profile (created by post_save signal).
+    1. request.user always has a profile (created by post_save signal in accounts).
+    2. OPERATOR and ADMIN UserProfile roles have identical visibility to staff.
+    3. Tour.guide FK uses related_name='guided_tours'; Booking uses 'bookings';
+       ItineraryItem uses 'itinerary_items' — all confirmed in models.py.
+    4. Booking.Status string values match those defined in bookings/models.py.
 
     FAILURE MODES:
-    - Missing profile: getattr returns None; the role check falls through to the
-      unfiltered queryset (all tours visible), which is acceptable because the
-      @guide_required decorator would have already raised PermissionDenied before
-      reaching this view for a truly profileless user.
+    - Missing profile (profileless user): getattr returns None; the role guard
+      evaluates to False, so the unfiltered queryset is returned.  Acceptable
+      because @guide_required has already blocked unauthenticated/GUEST users
+      before reaching this point.
+    - Empty queryset: renders the {% empty %} block in the template — no errors.
+    - Very large tour lists: no pagination yet; acceptable for MVP scale.
     """
-    # Eagerly join guide and guide.profile in a single SQL query to prevent
-    # per-row profile lookups when iterating over tours in the template.
-    tours = Tour.objects.select_related('guide__profile').order_by('-start_datetime')
+    from django.db.models import Count, Q
+    from apps.bookings.models import Booking
+
+    # Annotate tours with guest and activity counts in a single DB query.
+    # select_related avoids N+1 lookups when the template renders guide.name.
+    tours = (
+        Tour.objects
+        .select_related('guide__profile')  # prevent per-row profile SQL on guide display
+        .annotate(
+            # Count only active bookings — exclude CANCELLED and INVITED statuses
+            guest_count=Count(
+                'bookings',
+                filter=Q(bookings__status__in=[
+                    Booking.Status.RSVP_PENDING,
+                    Booking.Status.CONFIRMED,
+                ])
+            ),
+            # Count all itinerary items; used to display an activity badge on the card
+            activity_count=Count('itinerary_items'),
+        )
+        .order_by('-start_datetime')
+    )
 
     profile = getattr(request.user, 'profile', None)
 
-    # Restrict GUIDE-role users to their own tours only.
-    # Staff and OPERATOR/ADMIN roles see the full queryset without filtering.
+    # GUIDE role: restrict queryset to tours owned by the current guide.
+    # OPERATOR, ADMIN, and Django staff see the full unfiltered queryset.
     if not request.user.is_staff and profile and profile.role == 'GUIDE':
         tours = tours.filter(guide=request.user)
 

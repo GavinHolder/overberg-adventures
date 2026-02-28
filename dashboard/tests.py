@@ -1,7 +1,10 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from datetime import timedelta
 from apps.accounts.models import UserProfile
+from apps.tours.models import Tour
 
 User = get_user_model()
 
@@ -93,3 +96,111 @@ class DashboardAccessTest(TestCase):
         self.client.force_login(user)
         resp = self.client.get(reverse('dashboard:tours_list'))
         self.assertTemplateUsed(resp, 'admin_panel/tours/list.html')
+
+
+def make_tour(guide, name='Test Tour', status=Tour.Status.ACTIVE):
+    """
+    Factory helper: create a Tour with sensible defaults for testing.
+
+    Creates a minimal Tour instance attached to the given guide, with
+    a start date 3 days in the future so it is never treated as expired.
+    Generates a UUID-based tour_code to satisfy the unique constraint without
+    requiring the TourCodeWord pool to be seeded in tests.
+
+    Args:
+        guide: User instance used as the Tour.guide FK.
+        name:  Human-readable tour display name (default 'Test Tour').
+        status: Tour.Status TextChoices value (default ACTIVE).
+
+    Returns:
+        Saved Tour instance.
+
+    ASSUMPTIONS:
+    - Tour.location_name and Tour.capacity are required non-blank fields.
+    - tour_code must be non-blank and unique; we use a UUID fragment here.
+    """
+    import uuid
+    # Use a short UUID prefix to satisfy the unique=True constraint without
+    # needing the TourCodeWord word pool to be seeded in the test database.
+    unique_code = f'test-{uuid.uuid4().hex[:8]}'
+    return Tour.objects.create(
+        name=name,
+        guide=guide,
+        tour_code=unique_code,
+        start_datetime=timezone.now() + timedelta(days=3),
+        location_name='Test Beach',
+        capacity=10,
+        status=status,
+    )
+
+
+class ToursListTest(TestCase):
+    """
+    Tests for the guide dashboard tours list tab (Task 24).
+
+    Verifies role-based tour visibility, annotated context values (guest_count),
+    status badge rendering, and empty-state display.
+    """
+
+    def setUp(self):
+        """Create a guide user and log them in for each test."""
+        self.guide = make_user('guide@tours.com', UserProfile.Role.GUIDE)
+        self.client.force_login(self.guide)
+
+    def test_shows_guide_own_tours_only(self):
+        """Guides only see their own tours — other guides' tours are hidden."""
+        other_guide = make_user('other@tours.com', UserProfile.Role.GUIDE)
+        # Create one tour belonging to self.guide and one to another guide
+        make_tour(self.guide, 'My Tour')
+        make_tour(other_guide, 'Their Tour')
+        resp = self.client.get(reverse('dashboard:tours_list'))
+        # Self.guide's tour must appear; the other guide's must not
+        self.assertContains(resp, 'My Tour')
+        self.assertNotContains(resp, 'Their Tour')
+
+    def test_admin_sees_all_tours(self):
+        """Staff/admin user sees tours from all guides without filtering."""
+        admin = make_user('admin@tours.com', is_staff=True)
+        self.client.force_login(admin)
+        other = make_user('g2@tours.com', UserProfile.Role.GUIDE)
+        # Create tours under two different guides
+        make_tour(self.guide, 'Tour A')
+        make_tour(other, 'Tour B')
+        resp = self.client.get(reverse('dashboard:tours_list'))
+        # Admin must see both tours
+        self.assertContains(resp, 'Tour A')
+        self.assertContains(resp, 'Tour B')
+
+    def test_shows_empty_state(self):
+        """Empty state message is shown when a guide has no tours."""
+        # No tours created — response should render the {% empty %} block
+        resp = self.client.get(reverse('dashboard:tours_list'))
+        self.assertContains(resp, 'No tours')
+
+    def test_shows_guest_count_badge(self):
+        """Tour card shows the number of confirmed/pending guests."""
+        from apps.bookings.models import Booking
+        guest = make_user('g@guest.com', UserProfile.Role.GUEST)
+        tour = make_tour(self.guide, 'Beach Tour')
+        # Create a confirmed booking so guest_count annotation should equal 1
+        Booking.objects.create(tour=tour, user=guest, status=Booking.Status.CONFIRMED)
+        resp = self.client.get(reverse('dashboard:tours_list'))
+        # The annotated guest_count (1) must appear somewhere in the response
+        self.assertContains(resp, '1')
+
+    def test_shows_status_badge(self):
+        """Tour card shows the status badge text matching the tour status."""
+        make_tour(self.guide, 'Active Tour', Tour.Status.ACTIVE)
+        resp = self.client.get(reverse('dashboard:tours_list'))
+        # 'Active' is the human-readable label from Tour.Status.ACTIVE
+        self.assertContains(resp, 'Active')
+
+    def test_operator_sees_all_tours(self):
+        """OPERATOR role users see all tours, not just their own."""
+        op = make_user('op@tours.com', UserProfile.Role.OPERATOR)
+        self.client.force_login(op)
+        # Tour created under self.guide (not the operator)
+        make_tour(self.guide, 'Guide Tour')
+        resp = self.client.get(reverse('dashboard:tours_list'))
+        # Operator must see tours they didn't create
+        self.assertContains(resp, 'Guide Tour')

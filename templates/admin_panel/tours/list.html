@@ -1,11 +1,25 @@
 {% extends 'admin_panel/base.html' %}
 {% block title %}Tours{% endblock %}
 {% block tab_tours %}active{% endblock %}
+
 {% block content %}
-<h6 class="text-muted mb-3">Your Tours</h6>
+{# Header row: section title + "New Tour" action button #}
+<div class="d-flex align-items-center mb-3">
+  <h6 class="mb-0 fw-bold flex-grow-1">Your Tours</h6>
+  <a href="{% url 'dashboard:tour_create' %}" class="btn btn-sm btn-warning fw-bold">
+    <i class="bi bi-plus-lg me-1"></i>New Tour
+  </a>
+</div>
+
+{# Render one card partial per tour; fall through to empty state when no tours exist #}
 {% for tour in tours %}
-  <div class="tour-card status-{{ tour.status|lower }}">{{ tour.name }}</div>
+  {% include 'admin_panel/tours/partials/tour_card.html' with tour=tour only %}
 {% empty %}
-  <p class="text-muted text-center">No tours yet.</p>
+  {# Empty state: shown when the guide has not yet created any tours #}
+  <div class="text-center text-muted py-5">
+    <i class="bi bi-map fs-1 d-block mb-2 opacity-25"></i>
+    <p class="mb-3">No tours yet.</p>
+    <a href="{% url 'dashboard:tour_create' %}" class="btn btn-warning">Create your first tour</a>
+  </div>
 {% endfor %}
 {% endblock %}

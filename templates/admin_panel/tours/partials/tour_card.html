@@ -1,0 +1,82 @@
+{% comment %}
+  Tour card partial — renders a single tour as a styled card.
+
+  Included by admin_panel/tours/list.html for each tour in the queryset.
+
+  Context variables required:
+    tour  — Tour instance annotated with:
+              guest_count    (int) active RSVP_PENDING + CONFIRMED bookings
+              activity_count (int) total ItineraryItems for this tour
+
+  The card is wrapped in an id="tour-card-{{ tour.pk }}" div so HTMX
+  hx-swap="outerHTML" can target and remove it on successful deletion.
+
+  ASSUMPTIONS:
+  - tour.get_status_display returns a human-readable label (Django TextChoices).
+  - tour.end_datetime may be None (optional field); guarded with an if tag.
+  - Bootstrap Icons (bi-*) are loaded in the base template.
+  - HTMX is loaded in the base template for hx-delete functionality.
+{% endcomment %}
+<div class="tour-card status-{{ tour.status|lower }}" id="tour-card-{{ tour.pk }}">
+
+  {# Header row: tour name (left) + colour-coded status badge (right) #}
+  <div class="d-flex align-items-start justify-content-between mb-1">
+    <div class="fw-bold" style="font-size:15px;">{{ tour.name }}</div>
+    {# Status badge colour: green=Active, grey=Draft, blue=Completed, red=Cancelled #}
+    {% if tour.status == 'ACTIVE' %}
+      <span class="badge rounded-pill ms-2 bg-success" style="font-size:10px;">{{ tour.get_status_display }}</span>
+    {% elif tour.status == 'DRAFT' %}
+      <span class="badge rounded-pill ms-2 bg-secondary" style="font-size:10px;">{{ tour.get_status_display }}</span>
+    {% elif tour.status == 'COMPLETED' %}
+      <span class="badge rounded-pill ms-2 bg-primary" style="font-size:10px;">{{ tour.get_status_display }}</span>
+    {% else %}
+      <span class="badge rounded-pill ms-2 bg-danger" style="font-size:10px;">{{ tour.get_status_display }}</span>
+    {% endif %}
+  </div>
+
+  {# Date row: start date and optional end date #}
+  <div class="text-muted small mb-2">
+    <i class="bi bi-calendar3 me-1"></i>{{ tour.start_datetime|date:"d M Y" }}
+    {% if tour.end_datetime %}&nbsp;&rarr; {{ tour.end_datetime|date:"d M Y" }}{% endif %}
+  </div>
+
+  {# Stats row: guest count vs capacity, activity count, location name #}
+  <div class="d-flex gap-3 small text-muted mb-3">
+    {# guest_count is injected by the annotated queryset in tours_list view #}
+    <span><i class="bi bi-people me-1"></i>{{ tour.guest_count }}/{{ tour.capacity }}</span>
+    {# activity_count is injected by the annotated queryset in tours_list view #}
+    <span><i class="bi bi-list-check me-1"></i>{{ tour.activity_count }} activities</span>
+    <span><i class="bi bi-geo-alt me-1"></i>{{ tour.location_name|truncatechars:20 }}</span>
+  </div>
+
+  {# Action buttons row #}
+  <div class="d-flex gap-2">
+    {# Manage: navigates to the full tour detail/sub-tab view #}
+    <a href="{% url 'dashboard:tour_detail' tour.pk %}" class="btn btn-sm btn-outline-secondary flex-fill">
+      <i class="bi bi-eye me-1"></i>Manage
+    </a>
+    {# Edit: navigates to the tour edit form #}
+    <a href="{% url 'dashboard:tour_edit' tour.pk %}" class="btn btn-sm btn-outline-warning">
+      <i class="bi bi-pencil"></i>
+    </a>
+    {# QR: shows the QR code for guest check-in #}
+    <a href="{% url 'dashboard:tour_qr' tour.pk %}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-qr-code"></i>
+    </a>
+    {#
+      HTMX delete button:
+      - hx-delete sends a DELETE request to the tour_delete endpoint.
+      - hx-confirm shows a browser confirm dialog before sending the request.
+      - hx-target selects this entire card div by its unique ID.
+      - hx-swap="outerHTML swap:0.3s" replaces the card with the empty response body,
+        effectively removing it from the DOM with a 300 ms fade transition.
+    #}
+    <button class="btn btn-sm btn-outline-danger"
+            hx-delete="{% url 'dashboard:tour_delete' tour.pk %}"
+            hx-confirm="Delete {{ tour.name|escapejs }}? This will also delete all itinerary items and bookings."
+            hx-target="#tour-card-{{ tour.pk }}"
+            hx-swap="outerHTML swap:0.3s">
+      <i class="bi bi-trash"></i>
+    </button>
+  </div>
+</div>
