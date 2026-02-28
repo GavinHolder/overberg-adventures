@@ -2,7 +2,8 @@ import os
 
 from django.conf import settings
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from apps.bookings.models import Booking
 
 
 def service_worker(request):
@@ -16,3 +17,17 @@ def service_worker(request):
     response = HttpResponse(content, content_type='application/javascript')
     response['Service-Worker-Allowed'] = '/'
     return response
+
+
+def home(request):
+    if not request.user.is_authenticated:
+        return redirect('accounts:login')
+    if not request.user.profile.setup_complete:
+        return redirect('accounts:profile_setup')
+    bookings = (
+        Booking.objects.filter(user=request.user)
+        .exclude(status=Booking.Status.CANCELLED)
+        .select_related('tour')
+        .order_by('-tour__start_datetime')
+    )
+    return render(request, 'app/home.html', {'bookings': bookings})

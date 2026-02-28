@@ -29,7 +29,7 @@
     <span>Map</span>
   </a>
 
-  <a href="/accounts/setup/" class="bottom-nav-item {% if '/accounts/setup' in request.path or request.path == '/accounts/profile/' %}active{% endif %}">
+  <a href="{% url 'accounts:profile' %}" class="bottom-nav-item {% if request.path == '/accounts/profile/' %}active{% endif %}">
     <span class="avatar-sm bg-purple">
       {% if request.user.profile.avatar %}
         <img src="{{ request.user.profile.avatar.url }}" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">

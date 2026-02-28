@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from django.conf import settings
 from django.utils import timezone
 from django.views.decorators.http import require_POST, require_http_methods
+from django.contrib.auth.decorators import login_required
 
 from .models import EmailOTP, UserProfile
 from .emails import send_otp_email
@@ -340,3 +341,16 @@ def profile_settings_toggle(request):
 def logout_view(request):
     logout(request)
     return redirect('accounts:login')
+
+
+# ---------------------------------------------------------------------------
+# Profile view
+# ---------------------------------------------------------------------------
+
+@login_required
+def profile_view(request):
+    from django.conf import settings as django_settings
+    return render(request, 'accounts/profile.html', {
+        'profile': request.user.profile,
+        'dev_mode': getattr(django_settings, 'DEV_MODE', False),
+    })

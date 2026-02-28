@@ -6,15 +6,20 @@ from django.conf.urls.static import static
 from apps.landing.views import service_worker
 
 urlpatterns = [
-    path('service-worker.js', service_worker, name='service-worker'),
     path('admin/', admin.site.urls),
+    path('service-worker.js', service_worker, name='service-worker'),
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
-    path('app/', include('apps.tours.urls', namespace='app')),  # placeholder
-    path('', include('apps.landing.urls', namespace='landing')),  # placeholder
+    path('app/sos/', include('apps.sos.urls', namespace='sos')),
+    path('app/map/', include('apps.maps.urls', namespace='maps')),
+    path('app/', include('apps.bookings.urls', namespace='bookings')),
+    path('', include('apps.landing.urls', namespace='landing')),
     path('webpush/', include('webpush.urls')),
 ]
 
 if settings.DEBUG:
-    import debug_toolbar
-    urlpatterns = [path('__debug__/', include(debug_toolbar.urls))] + urlpatterns
+    try:
+        import debug_toolbar
+        urlpatterns = [path('__debug__/', include(debug_toolbar.urls))] + urlpatterns
+    except ImportError:
+        pass
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
