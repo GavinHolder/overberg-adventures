@@ -5,6 +5,7 @@ from django.core.exceptions import PermissionDenied
 from django.conf import settings
 
 from .decorators import guide_required, staff_required
+from .forms import TourForm
 from apps.tours.models import Tour
 
 
@@ -165,15 +166,49 @@ def guides_list(request):
 @guide_required
 def tour_create(request):
     """
-    Stub: tour creation form (not yet implemented).
+    Guide dashboard: Create a new tour.
 
-    Renders the tour list template with an empty tours collection so the URL
-    resolves and the template renders without errors. A real implementation
-    will render a ModelForm for Tour creation and handle POST.
+    GET: Renders an empty TourForm with sensible initial values.
+    POST: Validates the submitted form; on success auto-assigns the guide
+    (non-staff only), saves the tour, then redirects to the tour detail page.
+    On validation failure, re-renders the form with inline error messages.
+
+    ASSUMPTIONS:
+    1. Non-staff users should automatically become the tour's guide — they
+       are creating a tour they will personally run.
+    2. Staff users leave guide=None; they may assign any guide manually later
+       via the admin panel or a future guide-picker UI.
+    3. TourCodeWord pool will be populated in production; in tests the tour_code
+       field is not set by this form (it is set by the model's save signal or
+       by the test factory using a UUID fragment).
+
+    FAILURE MODES:
+    - Empty/invalid form → re-render with errors, no DB write (status 200).
+    - TourCodeWord pool exhausted → ValueError raised in model.save() → uncaught
+      here; will become a 500 until Phase 6 adds graceful handling.
+    - Non-staff user with no profile → guide assignment skipped silently;
+      @guide_required already rejected unauthenticated/GUEST users above.
 
     Access: guide-level users and staff (enforced by @guide_required).
     """
-    return render(request, 'admin_panel/tours/list.html', {'tours': [], 'dev_mode': _dev_mode()})
+    if request.method == 'POST':
+        form = TourForm(request.POST)
+        if form.is_valid():
+            # commit=False lets us set guide before the INSERT hits the DB
+            tour = form.save(commit=False)
+            # Non-staff guides are auto-assigned — staff can assign any guide
+            if not request.user.is_staff:
+                tour.guide = request.user
+            tour.save()
+            return redirect('dashboard:tour_detail', pk=tour.pk)
+    else:
+        # Prefill sensible defaults so the guide doesn't start from a blank slate
+        form = TourForm(initial={'status': Tour.Status.DRAFT, 'capacity': 10})
+
+    return render(request, 'admin_panel/tours/form.html', {
+        'form': form,
+        'dev_mode': _dev_mode(),
+    })
 
 
 @guide_required
@@ -200,20 +235,50 @@ def tour_detail(request, pk):
 @guide_required
 def tour_edit(request, pk):
     """
-    Stub: tour edit form (not yet implemented).
+    Guide dashboard: Edit an existing tour.
 
-    Fetches the Tour by primary key (404 if not found) and renders the list
-    template with that single tour so the URL resolves. A real implementation
-    will render a pre-populated ModelForm and handle POST updates.
+    GET: Renders TourForm pre-populated with the tour's existing data.
+    POST: Validates submitted changes; on success saves the tour and redirects
+    to the tour detail page.  On validation failure, re-renders with errors.
+
+    The guide field is intentionally NOT included in the form — ownership can
+    only be changed via the admin panel to prevent guides from hijacking tours.
 
     Args:
         pk: Primary key of the Tour to edit.
+
+    ASSUMPTIONS:
+    1. Any guide-level user can edit any tour — ownership is not enforced here;
+       the list view already filters what each guide can see, providing implicit
+       access control. Strict ownership checks are deferred to a future phase.
+    2. The guide FK is intentionally preserved from the existing record and never
+       overwritten by this view (the form excludes it).
+
+    FAILURE MODES:
+    - Tour not found: get_object_or_404 raises Http404 → 404 response.
+    - Invalid POST data: form re-rendered with errors, DB unchanged.
 
     Access: guide-level users and staff (enforced by @guide_required).
     """
     from django.shortcuts import get_object_or_404
     tour = get_object_or_404(Tour, pk=pk)
-    return render(request, 'admin_panel/tours/list.html', {'tours': [tour], 'dev_mode': _dev_mode()})
+
+    if request.method == 'POST':
+        form = TourForm(request.POST, instance=tour)
+        if form.is_valid():
+            # instance= ensures UPDATE rather than INSERT; guide FK untouched
+            form.save()
+            return redirect('dashboard:tour_detail', pk=tour.pk)
+    else:
+        # Pre-populate the form with the tour's existing data for the GET request
+        form = TourForm(instance=tour)
+
+    return render(request, 'admin_panel/tours/form.html', {
+        'form': form,
+        # Pass tour so the template can show the tour_code and toggle title text
+        'tour': tour,
+        'dev_mode': _dev_mode(),
+    })
 
 
 @guide_required

@@ -1,0 +1,103 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}{% if tour %}Edit Tour{% else %}New Tour{% endif %}{% endblock %}
+{% block tab_tours %}active{% endblock %}
+
+{% block content %}
+{# ------------------------------------------------------------------ #}
+{# Back nav + page heading                                              #}
+{# ------------------------------------------------------------------ #}
+<div class="d-flex align-items-center mb-3">
+  {# Back link: return to tour detail when editing, tour list when creating #}
+  <a href="{% if tour %}{% url 'dashboard:tour_detail' tour.pk %}{% else %}{% url 'dashboard:tours_list' %}{% endif %}"
+     class="btn btn-sm btn-link ps-0 text-muted">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  <h6 class="mb-0 fw-bold flex-grow-1">
+    {% if tour %}Edit Tour{% else %}New Tour{% endif %}
+  </h6>
+</div>
+
+{% if tour %}
+{# Show the tour code when editing — it was auto-generated on creation #}
+{# Guides need to share this code with guests for RSVP; display it prominently #}
+<div class="inline-form-card mb-3">
+  <div class="text-muted small mb-1">Tour Code</div>
+  <div class="fw-bold fs-5 font-monospace">{{ tour.tour_code }}</div>
+  <div class="text-muted" style="font-size:11px;">Auto-generated. Guests use this to join.</div>
+</div>
+{% endif %}
+
+{# ------------------------------------------------------------------ #}
+{# Tour form — rendered field by field so each field gets proper       #}
+{# Bootstrap markup (label + input + error + help text).               #}
+{# ------------------------------------------------------------------ #}
+<div class="inline-form-card">
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {% for field in form %}
+    <div class="mb-3">
+      {# Field label — mark required fields with a red asterisk for clarity #}
+      <label class="form-label small fw-bold" for="{{ field.id_for_label }}">
+        {{ field.label }}
+        {% if field.field.required %}<span class="text-danger ms-1">*</span>{% endif %}
+      </label>
+
+      {% if field.errors %}
+        {# Re-render the field widget; Bootstrap invalid-feedback shows below it #}
+        {{ field }}
+        <div class="invalid-feedback d-block">{{ field.errors.0 }}</div>
+      {% else %}
+        {{ field }}
+      {% endif %}
+
+      {% if field.help_text %}
+        {# Supplemental instructions shown below the input #}
+        <div class="form-text text-muted">{{ field.help_text }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    {# Submit + cancel actions pinned at the bottom of the form #}
+    <div class="d-flex gap-2 mt-4">
+      <button type="submit" class="btn btn-warning fw-bold flex-fill">
+        {% if tour %}Save Changes{% else %}Create Tour{% endif %}
+      </button>
+      <a href="{% if tour %}{% url 'dashboard:tour_detail' tour.pk %}{% else %}{% url 'dashboard:tours_list' %}{% endif %}"
+         class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/**
+ * Apply Bootstrap form-control classes to raw Django widget outputs.
+ *
+ * Django's ModelForm renders plain <input>, <select>, and <textarea> tags
+ * without Bootstrap CSS classes.  Bootstrap 5 requires 'form-control' on
+ * text/textarea inputs and 'form-select' on <select> for styled appearance.
+ *
+ * This runs once after DOM load; no event listeners needed because the
+ * form is server-rendered (not dynamically injected via HTMX on this page).
+ */
+document.querySelectorAll(
+  '.inline-form-card input:not([type=checkbox]):not([type=radio]),' +
+  '.inline-form-card textarea'
+).forEach(function(el) {
+  // Add form-control to all text-like inputs and textareas
+  el.classList.add('form-control');
+});
+
+document.querySelectorAll('.inline-form-card select').forEach(function(el) {
+  // Dropdowns use form-select, not form-control, in Bootstrap 5
+  el.classList.add('form-select');
+});
+
+document.querySelectorAll('.inline-form-card input[type=checkbox]').forEach(function(el) {
+  // Checkboxes use form-check-input for proper alignment and sizing
+  el.classList.add('form-check-input');
+});
+</script>
+{% endblock %}

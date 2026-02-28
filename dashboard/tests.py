@@ -204,3 +204,101 @@ class ToursListTest(TestCase):
         resp = self.client.get(reverse('dashboard:tours_list'))
         # Operator must see tours they didn't create
         self.assertContains(resp, 'Guide Tour')
+
+
+class TourCRUDTest(TestCase):
+    """
+    Tests for creating, editing, and deleting tours via the guide dashboard.
+    Covers: form rendering, POST creates/updates DB, auto guide assignment,
+    redirect after success, HTMX DELETE.
+    """
+
+    def setUp(self):
+        """Create a guide user and log them in for all CRUD tests."""
+        self.guide = make_user('guide@crud.com', UserProfile.Role.GUIDE)
+        self.client.force_login(self.guide)
+
+    def test_create_tour_get_shows_form(self):
+        """GET /guide/tours/create/ returns 200 and shows the form."""
+        resp = self.client.get(reverse('dashboard:tour_create'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Tour Name')
+
+    def test_create_tour_post_creates_and_redirects(self):
+        """Valid POST creates a Tour and redirects to the tour detail page."""
+        resp = self.client.post(reverse('dashboard:tour_create'), {
+            'name': 'Whale Watching',
+            'start_datetime': '2026-04-01T09:00',
+            'location_name': 'Hermanus',
+            'capacity': 12,
+            'status': 'DRAFT',
+            'description': '',
+            'min_fitness_level': 3,
+            'rsvp_deadline_hours': 24,
+        })
+        self.assertEqual(Tour.objects.count(), 1)
+        tour = Tour.objects.first()
+        self.assertRedirects(resp, reverse('dashboard:tour_detail', args=[tour.pk]))
+
+    def test_create_tour_auto_assigns_guide(self):
+        """The logged-in guide is automatically set as the tour's guide."""
+        self.client.post(reverse('dashboard:tour_create'), {
+            'name': 'Hike',
+            'start_datetime': '2026-05-01T07:00',
+            'location_name': 'Kogelberg',
+            'capacity': 8,
+            'status': 'DRAFT',
+            'description': '',
+            'min_fitness_level': 3,
+            'rsvp_deadline_hours': 24,
+        })
+        tour = Tour.objects.first()
+        self.assertEqual(tour.guide, self.guide)
+
+    def test_create_tour_staff_does_not_auto_assign(self):
+        """Staff users are NOT auto-assigned as guide — guide field stays blank."""
+        staff = make_user('staff@crud.com', is_staff=True)
+        self.client.force_login(staff)
+        self.client.post(reverse('dashboard:tour_create'), {
+            'name': 'Staff Tour',
+            'start_datetime': '2026-06-01T08:00',
+            'location_name': 'Test',
+            'capacity': 5,
+            'status': 'DRAFT',
+            'description': '',
+            'min_fitness_level': 3,
+            'rsvp_deadline_hours': 24,
+        })
+        tour = Tour.objects.first()
+        # Staff don't auto-assign themselves — they may want to assign any guide
+        self.assertIsNone(tour.guide)
+
+    def test_edit_tour_updates_fields(self):
+        """Valid POST to edit view updates the tour name and redirects."""
+        tour = make_tour(self.guide, 'Old Name')
+        resp = self.client.post(reverse('dashboard:tour_edit', args=[tour.pk]), {
+            'name': 'New Name',
+            'start_datetime': '2026-06-01T08:00',
+            'location_name': 'Bettys Bay',
+            'capacity': 15,
+            'status': 'ACTIVE',
+            'description': 'Updated',
+            'min_fitness_level': 2,
+            'rsvp_deadline_hours': 48,
+        })
+        tour.refresh_from_db()
+        self.assertEqual(tour.name, 'New Name')
+        self.assertRedirects(resp, reverse('dashboard:tour_detail', args=[tour.pk]))
+
+    def test_delete_tour_removes_it(self):
+        """DELETE request removes the tour and returns 200 (HTMX response)."""
+        tour = make_tour(self.guide)
+        resp = self.client.delete(reverse('dashboard:tour_delete', args=[tour.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(Tour.objects.filter(pk=tour.pk).exists())
+
+    def test_invalid_create_shows_errors(self):
+        """Submitting an empty form shows validation errors without creating a tour."""
+        resp = self.client.post(reverse('dashboard:tour_create'), {})
+        self.assertEqual(Tour.objects.count(), 0)
+        self.assertEqual(resp.status_code, 200)  # form re-rendered, not redirect
