@@ -1,4 +1,62 @@
 {% extends 'admin_panel/base.html' %}
-{% block title %}Activities{% endblock %}
+{% block title %}Activity Library{% endblock %}
 {% block tab_activities %}active{% endblock %}
-{% block content %}<p class="text-muted text-center py-4">Activity Library coming soon.</p>{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+  <h6 class="mb-0 fw-bold flex-grow-1">Activity Library</h6>
+  <a href="{% url 'dashboard:activity_create' %}" class="btn btn-sm btn-warning fw-bold">
+    <i class="bi bi-plus-lg me-1"></i>New Category
+  </a>
+</div>
+
+<p class="text-muted small mb-3">
+  Activity categories group your itinerary items with colour-coded labels.
+</p>
+
+{% for cat in categories %}
+<div class="tour-card" id="cat-{{ cat.pk }}">
+  <div class="d-flex align-items-center">
+    {# Colour swatch circle containing the category icon — gives instant visual identity #}
+    <span class="rounded-circle me-3 d-flex align-items-center justify-content-center flex-shrink-0"
+          style="width:40px;height:40px;background:{{ cat.colour }};">
+      <i class="bi bi-{{ cat.icon }} text-white"></i>
+    </span>
+
+    <div class="flex-grow-1" style="min-width:0;">
+      <div class="fw-semibold">{{ cat.name }}</div>
+      <div class="text-muted" style="font-size:11px;">
+        {{ cat.item_count }} itinerary item{{ cat.item_count|pluralize }}
+        {# Show "Hidden" badge if the category is inactive — won't appear in itinerary builder #}
+        {% if not cat.is_active %}
+          <span class="badge bg-secondary ms-1" style="font-size:10px;">Hidden</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="d-flex gap-1 flex-shrink-0">
+      {# Edit button navigates to the full edit form #}
+      <a href="{% url 'dashboard:activity_edit' cat.pk %}"
+         class="btn btn-sm btn-link text-warning p-1">
+        <i class="bi bi-pencil"></i>
+      </a>
+      {# HTMX delete — sends DELETE to the delete endpoint then swaps the card with empty string #}
+      <button class="btn btn-sm btn-link text-danger p-1"
+              hx-delete="{% url 'dashboard:activity_delete' cat.pk %}"
+              hx-confirm="Delete '{{ cat.name|escapejs }}'? Itinerary items using this category will lose their category label."
+              hx-target="#cat-{{ cat.pk }}"
+              hx-swap="outerHTML swap:0.2s">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+  </div>
+</div>
+{% empty %}
+{# Empty state — shown when no ActivityCategory records exist in the DB #}
+<div class="text-center text-muted py-5">
+  <i class="bi bi-lightning fs-2 d-block mb-2 opacity-25"></i>
+  <p class="mb-3">No activity categories yet.</p>
+  <a href="{% url 'dashboard:activity_create' %}" class="btn btn-warning">Add First Category</a>
+</div>
+{% endfor %}
+{% endblock %}

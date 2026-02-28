@@ -1,5 +1,5 @@
 from django import forms
-from apps.tours.models import Tour, ItineraryItem
+from apps.tours.models import Tour, ItineraryItem, ActivityCategory
 
 
 class TourForm(forms.ModelForm):
@@ -128,4 +128,39 @@ class ItineraryItemForm(forms.ModelForm):
         labels = {
             'duration_minutes': 'Duration (minutes)',
             'location_name': 'Location name',
+        }
+
+
+class ActivityCategoryForm(forms.ModelForm):
+    """
+    Form for creating and editing ActivityCategory instances.
+
+    The colour field uses an HTML5 color picker for intuitive selection.
+    Validation is also handled by the model-level RegexValidator on the colour field
+    (must be a valid 6-digit hex colour like #F97316).
+
+    The icon field accepts any Bootstrap Icons name (e.g. 'geo-alt', 'water', 'bicycle').
+    There is no dropdown — guides type the icon name directly.
+    A help text link to icons.getbootstrap.com is shown in the template.
+    """
+
+    class Meta:
+        """Define the model, included fields, widget overrides, and human-readable labels."""
+
+        model = ActivityCategory
+        fields = ['name', 'icon', 'colour', 'is_active', 'order']
+        widgets = {
+            # HTML5 color picker — renders as a colour swatch, outputs #RRGGBB
+            'colour': forms.TextInput(attrs={'type': 'color'}),
+            'name': forms.TextInput(attrs={'placeholder': 'e.g. Hiking, Wine Tasting'}),
+            'icon': forms.TextInput(attrs={'placeholder': 'e.g. geo-alt, water, bicycle'}),
+        }
+        labels = {
+            # Human-readable labels to replace the default verbose field names
+            'is_active': 'Show in itinerary builder',
+            'order': 'Display order (lower = first)',
+        }
+        help_texts = {
+            # Link to Bootstrap Icons catalogue so guides can look up icon names
+            'icon': 'Bootstrap Icons name — find all at icons.getbootstrap.com',
         }

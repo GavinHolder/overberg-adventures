@@ -6,7 +6,7 @@ from django.conf import settings
 
 from .decorators import guide_required, staff_required
 from .forms import TourForm
-from apps.tours.models import Tour, ItineraryItem
+from apps.tours.models import Tour, ItineraryItem, ActivityCategory
 
 
 def _dev_mode():
@@ -117,15 +117,139 @@ def tours_list(request):
 @guide_required
 def activities_list(request):
     """
-    Render the activities management list view (stub).
+    Guide dashboard: Activity Library tab.
 
-    Currently a placeholder that renders the activities list template with no
-    activity data. A full implementation will query the Activity model once
-    the activities app is built out.
+    Lists all ActivityCategory records ordered by display order then name.
+    Annotates each category with the count of itinerary items using it
+    so guides can see which categories are in use.
+
+    Access: guide-level users and staff (enforced by @guide_required).
+
+    ASSUMPTIONS:
+    1. ActivityCategory.itinerary_items is a valid related_name on the FK
+       (confirmed in apps/tours/models.py ItineraryItem.category FK).
+    2. No pagination needed at MVP scale — category counts stay small.
+
+    FAILURE MODES:
+    - Empty queryset: renders {% empty %} block in template — no error.
+    """
+    from django.db.models import Count
+    # Annotate to avoid N+1 per-category item count queries in the template
+    categories = (
+        ActivityCategory.objects
+        .annotate(item_count=Count('itinerary_items'))
+        .order_by('order', 'name')
+    )
+    return render(request, 'admin_panel/activities/list.html', {
+        'categories': categories,
+        'dev_mode': _dev_mode(),
+    })
+
+
+@guide_required
+def activity_create(request):
+    """
+    Guide dashboard: Create a new ActivityCategory.
+
+    GET: Renders an empty ActivityCategoryForm with sensible defaults.
+    POST: Validates and saves the new category, then redirects to the
+    activities list.  On validation failure, re-renders the form with errors.
+
+    ASSUMPTIONS:
+    1. Colour validation is handled by both the form's TextInput (type=color
+       widget ensures browser sends valid #RRGGBB) AND the model-level
+       RegexValidator — double-layer defence.
+    2. No guide-level ownership on categories — they are shared across all guides.
+
+    FAILURE MODES:
+    - Invalid hex colour → model validator fires → form.is_valid() returns False
+      → template re-rendered with error, no DB write (status 200).
+    - Empty name → required field error, no DB write.
 
     Access: guide-level users and staff (enforced by @guide_required).
     """
-    return render(request, 'admin_panel/activities/list.html', {'dev_mode': _dev_mode()})
+    from .forms import ActivityCategoryForm
+    if request.method == 'POST':
+        form = ActivityCategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard:activities_list')
+    else:
+        # Pre-populate brand colour and zero-based order as sensible defaults
+        form = ActivityCategoryForm(initial={'colour': '#F97316', 'order': 0})
+    return render(request, 'admin_panel/activities/form.html', {
+        'form': form,
+        'dev_mode': _dev_mode(),
+    })
+
+
+@guide_required
+def activity_edit(request, pk):
+    """
+    Guide dashboard: Edit an existing ActivityCategory.
+
+    GET: Renders the form pre-populated with the category's current values.
+    POST: Validates and saves the changes, then redirects to activities list.
+    On validation failure, re-renders the form with inline errors.
+
+    Args:
+        pk: ActivityCategory primary key
+
+    FAILURE MODES:
+    - Category not found: get_object_or_404 raises Http404 → 404 response.
+    - Invalid POST data: form re-rendered with errors, DB unchanged.
+
+    Access: guide-level users and staff (enforced by @guide_required).
+    """
+    from django.shortcuts import get_object_or_404
+    from .forms import ActivityCategoryForm
+    # 404 if category does not exist — prevents silent data corruption
+    cat = get_object_or_404(ActivityCategory, pk=pk)
+    if request.method == 'POST':
+        form = ActivityCategoryForm(request.POST, instance=cat)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard:activities_list')
+    else:
+        # Pre-populate with existing values so the guide sees current state
+        form = ActivityCategoryForm(instance=cat)
+    return render(request, 'admin_panel/activities/form.html', {
+        'form': form,
+        'category': cat,  # passed so template can show "Edit X" vs "New Category" title
+        'dev_mode': _dev_mode(),
+    })
+
+
+@guide_required
+def activity_delete(request, pk):
+    """
+    Guide dashboard: Delete an ActivityCategory.
+
+    Accepts POST or DELETE (HTMX sends DELETE via hx-delete attribute).
+    Returns an empty 200 response — HTMX swaps the category card out of the
+    list via outerHTML swap without a full page reload.
+
+    Args:
+        pk: ActivityCategory primary key
+
+    FAILURE MODES:
+    - Category not found: 404 via get_object_or_404.
+    - Category in use: Django FK is SET_NULL on ItineraryItem — items survive
+      category deletion with category=None.  This is intentional; items are
+      not deleted when their label is removed.
+    - Non-POST/DELETE method: returns 405 Method Not Allowed.
+
+    Access: guide-level users and staff (enforced by @guide_required).
+    """
+    from django.shortcuts import get_object_or_404
+    from django.http import HttpResponse
+    cat = get_object_or_404(ActivityCategory, pk=pk)
+    if request.method in ('POST', 'DELETE'):
+        cat.delete()
+        # Empty body tells HTMX to replace the card element with nothing (removal)
+        return HttpResponse('')
+    # Reject GET, PUT, PATCH etc. — this endpoint is write-only
+    return HttpResponse(status=405)
 
 
 @guide_required

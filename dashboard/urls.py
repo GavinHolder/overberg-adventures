@@ -16,6 +16,9 @@ urlpatterns = [
     path('tours/<int:tour_pk>/itinerary/<int:item_pk>/delete/', views.itinerary_delete, name='itinerary_delete'),
     path('tours/<int:tour_pk>/itinerary/reorder/', views.itinerary_reorder, name='itinerary_reorder'),
     path('activities/', views.activities_list, name='activities_list'),
+    path('activities/create/', views.activity_create, name='activity_create'),
+    path('activities/<int:pk>/edit/', views.activity_edit, name='activity_edit'),
+    path('activities/<int:pk>/delete/', views.activity_delete, name='activity_delete'),
     path('guests/', views.guests_list, name='guests_list'),
     path('guides/', views.guides_list, name='guides_list'),
 ]

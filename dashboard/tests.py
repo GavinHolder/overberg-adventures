@@ -559,3 +559,80 @@ class GuestManifestTest(TestCase):
         Booking.objects.create(tour=self.tour, user=guest2, status=Booking.Status.RSVP_PENDING)
         resp = self._get_guests_tab()
         self.assertContains(resp, '2 enrolled')
+
+
+class ActivityLibraryTest(TestCase):
+    """
+    Tests for the Activity Library tab (Task 29).
+    Covers: list display, create, edit, delete operations on ActivityCategory.
+    """
+
+    def setUp(self):
+        """Create a guide user and log them in."""
+        self.guide = make_user('guide@activities.com', UserProfile.Role.GUIDE)
+        self.client.force_login(self.guide)
+
+    def test_activities_list_shows_category_names(self):
+        """Activity categories are listed by name."""
+        ActivityCategory.objects.create(name='Hiking', icon='geo-alt', colour='#198754')
+        resp = self.client.get(reverse('dashboard:activities_list'))
+        self.assertContains(resp, 'Hiking')
+
+    def test_activities_list_empty_state(self):
+        """Empty state is shown when no categories exist."""
+        resp = self.client.get(reverse('dashboard:activities_list'))
+        self.assertContains(resp, 'No activity categories')
+
+    def test_create_category_post_creates_record(self):
+        """POST to activity_create creates an ActivityCategory record."""
+        resp = self.client.post(reverse('dashboard:activity_create'), {
+            'name': 'Snorkelling',
+            'icon': 'water',
+            'colour': '#0d6efd',
+            'is_active': True,
+            'order': 0,
+        })
+        self.assertTrue(ActivityCategory.objects.filter(name='Snorkelling').exists())
+
+    def test_create_category_redirects_on_success(self):
+        """Successful POST redirects to the activities list."""
+        resp = self.client.post(reverse('dashboard:activity_create'), {
+            'name': 'Kayaking',
+            'icon': 'water',
+            'colour': '#0d9488',
+            'is_active': True,
+            'order': 1,
+        })
+        self.assertRedirects(resp, reverse('dashboard:activities_list'))
+
+    def test_edit_category_updates_name(self):
+        """POST to activity_edit updates the category name in the DB."""
+        cat = ActivityCategory.objects.create(name='Old Cat', icon='star', colour='#F97316')
+        self.client.post(reverse('dashboard:activity_edit', args=[cat.pk]), {
+            'name': 'New Cat',
+            'icon': 'star',
+            'colour': '#F97316',
+            'is_active': True,
+            'order': 0,
+        })
+        cat.refresh_from_db()
+        self.assertEqual(cat.name, 'New Cat')
+
+    def test_delete_category_removes_record(self):
+        """DELETE request removes the ActivityCategory record."""
+        cat = ActivityCategory.objects.create(name='Wine Tasting', icon='cup', colour='#6f42c1')
+        resp = self.client.delete(reverse('dashboard:activity_delete', args=[cat.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(ActivityCategory.objects.filter(pk=cat.pk).exists())
+
+    def test_create_invalid_colour_shows_error(self):
+        """Invalid hex colour fails validation and does not create a record."""
+        resp = self.client.post(reverse('dashboard:activity_create'), {
+            'name': 'Bad Colour',
+            'icon': 'star',
+            'colour': 'not-a-colour',
+            'is_active': True,
+            'order': 0,
+        })
+        self.assertFalse(ActivityCategory.objects.filter(name='Bad Colour').exists())
+        self.assertEqual(resp.status_code, 200)  # form re-rendered
