@@ -1,6 +1,74 @@
-{# Guest manifest tab — full implementation in Task 28.
-   Context variables available: tour, bookings (QuerySet with user__profile selected) #}
+{% comment %}
+Guest manifest tab partial.
+Shows all guests enrolled in the tour with their dietary/medical info,
+contact details, and booking status.
+Context: bookings (QuerySet of Booking with user__profile selected), tour
+{% endcomment %}
+
+<div class="d-flex align-items-center mb-3">
+  {# Guest count summary line #}
+  <span class="text-muted small flex-grow-1">{{ bookings.count }} enrolled</span>
+</div>
+
+{% for booking in bookings %}
+<div class="guest-row">
+  {# Avatar initials circle — uses profile.initials property #}
+  <div class="guest-avatar">
+    {{ booking.user.profile.initials|upper }}
+  </div>
+
+  <div class="flex-grow-1" style="min-width:0;">
+    {# Guest name and email #}
+    <div class="fw-semibold text-truncate" style="font-size:14px;">
+      {{ booking.user.profile.full_name }}
+    </div>
+    <div class="text-muted text-truncate" style="font-size:11px;">
+      {{ booking.user.email }}
+    </div>
+
+    {# Dietary requirements — important for catering/meal planning #}
+    {% if booking.user.profile.dietary_requirements %}
+    <div class="text-muted mt-1" style="font-size:11px;">
+      <i class="bi bi-egg-fried me-1"></i>{{ booking.user.profile.dietary_requirements }}
+    </div>
+    {% endif %}
+
+    {# Medical conditions — highlighted in warning colour for safety awareness #}
+    {% if booking.user.profile.medical_conditions %}
+    <div class="text-warning mt-1" style="font-size:11px;">
+      <i class="bi bi-heart-pulse me-1"></i>{{ booking.user.profile.medical_conditions }}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
+    {# Booking status badge — colour-coded for quick scanning #}
+    <span class="badge rounded-pill
+      {% if booking.status == 'CONFIRMED' %}bg-success
+      {% elif booking.status == 'RSVP_PENDING' %}bg-warning text-dark
+      {% elif booking.status == 'INVITED' %}bg-secondary
+      {% else %}bg-danger{% endif %}"
+      style="font-size:10px;">
+      {{ booking.get_status_display }}
+    </span>
+
+    {# WhatsApp quick-contact link — only shown if guest has a WhatsApp number #}
+    {% if booking.user.profile.phone_whatsapp %}
+    <a href="https://wa.me/{{ booking.user.profile.phone_whatsapp|cut:'+' }}"
+       class="btn btn-sm btn-link text-success p-0"
+       target="_blank"
+       rel="noopener noreferrer"
+       title="WhatsApp {{ booking.user.profile.full_name }}">
+      <i class="bi bi-whatsapp" style="font-size:16px;"></i>
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{% empty %}
+{# Empty state — shown when no bookings exist for this tour #}
 <div class="text-center text-muted py-4">
   <i class="bi bi-people fs-2 d-block mb-2 opacity-25"></i>
-  <p>Guests tab coming soon.</p>
+  <p class="mb-0">No guests enrolled yet.</p>
 </div>
+{% endfor %}

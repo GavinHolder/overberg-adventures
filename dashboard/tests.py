@@ -486,3 +486,76 @@ class ItineraryBuilderTest(TestCase):
             self._item_data('Hacked'),
         )
         self.assertEqual(resp.status_code, 403)
+
+
+from apps.bookings.models import Booking
+
+
+class GuestManifestTest(TestCase):
+    """
+    Tests for the guest manifest tab on the tour detail page (Task 28).
+    Covers: enrolled guests display, empty state, RSVP status badge,
+    dietary info, medical info visibility.
+    """
+
+    def setUp(self):
+        """Create a guide, their tour, and log in as guide."""
+        self.guide = make_user('guide@guests.com', UserProfile.Role.GUIDE)
+        self.client.force_login(self.guide)
+        self.tour = make_tour(self.guide)
+
+    def _get_guests_tab(self):
+        """Helper: GET the guests tab on the tour detail page."""
+        return self.client.get(
+            reverse('dashboard:tour_detail', args=[self.tour.pk]),
+            {'tab': 'guests'}
+        )
+
+    def test_guests_tab_shows_enrolled_guest_name(self):
+        """Confirmed guests are listed by full name on the guests tab."""
+        guest = make_user('guest@manifest.com', UserProfile.Role.GUEST)
+        guest.profile.first_name = 'Alice'
+        guest.profile.last_name = 'Botha'
+        guest.profile.save()
+        Booking.objects.create(tour=self.tour, user=guest, status=Booking.Status.CONFIRMED)
+        resp = self._get_guests_tab()
+        self.assertContains(resp, 'Alice')
+
+    def test_guests_tab_shows_empty_state(self):
+        """Empty state message is shown when no guests are enrolled."""
+        resp = self._get_guests_tab()
+        self.assertContains(resp, 'No guests')
+
+    def test_guests_tab_shows_rsvp_status_badge(self):
+        """RSVP_PENDING guests show a pending badge."""
+        guest = make_user('rsvp@manifest.com', UserProfile.Role.GUEST)
+        Booking.objects.create(tour=self.tour, user=guest, status=Booking.Status.RSVP_PENDING)
+        resp = self._get_guests_tab()
+        self.assertContains(resp, 'RSVP')
+
+    def test_guests_tab_shows_dietary_requirements(self):
+        """Dietary requirements are visible on the guest manifest."""
+        guest = make_user('diet@manifest.com', UserProfile.Role.GUEST)
+        guest.profile.dietary_requirements = 'Vegan'
+        guest.profile.save()
+        Booking.objects.create(tour=self.tour, user=guest, status=Booking.Status.CONFIRMED)
+        resp = self._get_guests_tab()
+        self.assertContains(resp, 'Vegan')
+
+    def test_guests_tab_shows_medical_conditions(self):
+        """Medical conditions are visible so guides can prepare."""
+        guest = make_user('med@manifest.com', UserProfile.Role.GUEST)
+        guest.profile.medical_conditions = 'Asthma'
+        guest.profile.save()
+        Booking.objects.create(tour=self.tour, user=guest, status=Booking.Status.CONFIRMED)
+        resp = self._get_guests_tab()
+        self.assertContains(resp, 'Asthma')
+
+    def test_guests_tab_shows_guest_count(self):
+        """The enrolled guest count is displayed."""
+        guest1 = make_user('g1@manifest.com', UserProfile.Role.GUEST)
+        guest2 = make_user('g2@manifest.com', UserProfile.Role.GUEST)
+        Booking.objects.create(tour=self.tour, user=guest1, status=Booking.Status.CONFIRMED)
+        Booking.objects.create(tour=self.tour, user=guest2, status=Booking.Status.RSVP_PENDING)
+        resp = self._get_guests_tab()
+        self.assertContains(resp, '2 enrolled')
