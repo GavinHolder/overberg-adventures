@@ -1,0 +1,168 @@
+/* ── Dashboard base ── */
+.dashboard-body {
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.dev-banner {
+  background: #dc2626;
+  color: #fff;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 0;
+  letter-spacing: 0.5px;
+}
+
+.dashboard-header {
+  background: linear-gradient(135deg, #1a3a2a, #2d5a3d);
+  min-height: 52px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.dashboard-tabs {
+  background: #fff;
+  position: sticky;
+  top: 52px;
+  z-index: 99;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+.dash-tab {
+  color: #6c757d;
+  text-decoration: none;
+  font-size: 12px;
+  transition: color .15s, border-bottom .15s;
+  border-bottom: 3px solid transparent;
+}
+
+.dash-tab:hover,
+.dash-tab.active {
+  color: #F97316;
+  border-bottom-color: #F97316;
+}
+
+.dashboard-main {
+  padding: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ── Tour cards ── */
+.tour-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.07);
+  border-left: 4px solid #F97316;
+}
+
+.tour-card.status-draft { border-left-color: #6c757d; }
+.tour-card.status-active { border-left-color: #198754; }
+.tour-card.status-completed { border-left-color: #0d6efd; }
+.tour-card.status-cancelled { border-left-color: #dc3545; }
+
+/* ── Itinerary builder ── */
+.itinerary-row {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: grab;
+}
+
+.itinerary-row:active { cursor: grabbing; }
+
+.drag-handle {
+  color: #adb5bd;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* ── Inline HTMX forms ── */
+.inline-form-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.10);
+  border-top: 3px solid #F97316;
+}
+
+/* ── Guest manifest ── */
+.guest-row {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.guest-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #F97316;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ── Photo gallery ── */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.photo-thumb {
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 4px;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* ── QR code display ── */
+.qr-container {
+  text-align: center;
+  padding: 24px;
+  background: #fff;
+  border-radius: 12px;
+}
+
+/* ── FAB add button ── */
+.fab-add {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #F97316;
+  color: #fff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(249,115,22,.4);
+  text-decoration: none;
+  z-index: 50;
+  transition: transform .15s;
+}
+
+.fab-add:hover { color: #fff; transform: scale(1.08); }

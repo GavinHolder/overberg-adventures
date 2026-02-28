@@ -1,0 +1,11 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Tours{% endblock %}
+{% block tab_tours %}active{% endblock %}
+{% block content %}
+<h6 class="text-muted mb-3">Your Tours</h6>
+{% for tour in tours %}
+  <div class="tour-card status-{{ tour.status|lower }}">{{ tour.name }}</div>
+{% empty %}
+  <p class="text-muted text-center">No tours yet.</p>
+{% endfor %}
+{% endblock %}

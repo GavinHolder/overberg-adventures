@@ -9,6 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('service-worker.js', service_worker, name='service-worker'),
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
+    path('guide/', include('dashboard.urls', namespace='dashboard')),
     path('app/sos/', include('apps.sos.urls', namespace='sos')),
     path('app/map/', include('apps.maps.urls', namespace='maps')),
     path('app/', include('apps.bookings.urls', namespace='bookings')),
