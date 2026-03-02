@@ -160,7 +160,13 @@ SOCIALACCOUNT_ADAPTER = 'apps.accounts.adapters.OurSocialAccountAdapter'
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'SCOPE': ['profile', 'email'],
+        'SCOPE': [
+            'profile',
+            'email',
+            # Request birthday access — Google returns it only if the user has set it
+            # on their Google account. Used to pre-fill Step 1 of profile setup.
+            'https://www.googleapis.com/auth/user.birthday.read',
+        ],
         'AUTH_PARAMS': {'access_type': 'online'},
         # Credentials are managed via SocialApp DB record (backend admin → Social Auth Providers).
         # Do NOT add an 'APP' key here — it creates a duplicate SocialApp record alongside the
