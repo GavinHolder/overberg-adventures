@@ -18,6 +18,8 @@ db.sqlite3
 db.sqlite3-journal
 media/
 staticfiles/
+.coverage
+htmlcov/
 # static/ is source — keep it tracked
 
 # Environment
@@ -37,6 +39,7 @@ env/
 
 # UI reference screenshots (client assets, not for repo)
 plannig/
+screenshots/
 
 # OS
 .DS_Store
