@@ -1,0 +1,101 @@
+{% extends 'backend/base.html' %}
+
+{% block title %}Overview{% endblock %}
+{% block nav_overview %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h4>Overview</h4>
+  <p class="text-muted">Site activity at a glance.</p>
+</div>
+
+<!-- Stats grid -->
+<div class="row g-3 mb-4">
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fff7ed; color:#F97316;"><i class="bi bi-map"></i></div>
+      <div class="stat-value">{{ stats.total_tours }}</div>
+      <div class="stat-label">Total Tours</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#f0fdf4; color:#22c55e;"><i class="bi bi-map-fill"></i></div>
+      <div class="stat-value">{{ stats.active_tours }}</div>
+      <div class="stat-label">Active Tours</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#eff6ff; color:#3b82f6;"><i class="bi bi-ticket-perforated"></i></div>
+      <div class="stat-value">{{ stats.total_bookings }}</div>
+      <div class="stat-label">Bookings</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fdf4ff; color:#a855f7;"><i class="bi bi-people"></i></div>
+      <div class="stat-value">{{ stats.total_users }}</div>
+      <div class="stat-label">Users</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Breakdown row -->
+<div class="row g-3 mb-4">
+
+  <div class="col-md-6">
+    <div class="backend-card">
+      <h6 class="fw-bold mb-3">Users by Role</h6>
+      <div class="d-flex flex-column gap-2">
+        <div class="d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-person me-2 text-muted"></i>Guests</span>
+          <span class="fw-bold">{{ stats.guests }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-person-badge me-2 text-muted"></i>Guides</span>
+          <span class="fw-bold">{{ stats.guides }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-person-gear me-2 text-muted"></i>Operators</span>
+          <span class="fw-bold">{{ stats.operators }}</span>
+        </div>
+      </div>
+      <a href="{% url 'backend:users_list' %}" class="btn btn-sm btn-outline-secondary w-100 mt-3">
+        Manage Users <i class="bi bi-arrow-right ms-1"></i>
+      </a>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="backend-card">
+      <h6 class="fw-bold mb-3">Quick Links</h6>
+      <div class="d-flex flex-column gap-2">
+        <a href="{% url 'backend:site_settings' %}" class="sidebar-link ps-0" style="border-radius:8px; padding:10px 8px;">
+          <i class="bi bi-gear" style="color:#F97316;"></i>
+          <span>Site Settings</span>
+          <i class="bi bi-chevron-right ms-auto text-muted" style="font-size:11px;"></i>
+        </a>
+        <a href="{% url 'backend:social_auth' %}" class="sidebar-link ps-0" style="border-radius:8px; padding:10px 8px;">
+          <i class="bi bi-shield-lock" style="color:#3b82f6;"></i>
+          <span>Social Auth</span>
+          {% if stats.social_providers_active %}<span class="badge rounded-pill bg-success ms-1" style="font-size:10px;">{{ stats.social_providers_active }} active</span>{% endif %}
+          <i class="bi bi-chevron-right ms-auto text-muted" style="font-size:11px;"></i>
+        </a>
+        <a href="{% url 'dashboard:tours_list' %}" class="sidebar-link ps-0" style="border-radius:8px; padding:10px 8px;">
+          <i class="bi bi-grid-3x3-gap" style="color:#22c55e;"></i>
+          <span>Guide Portal</span>
+          <i class="bi bi-chevron-right ms-auto text-muted" style="font-size:11px;"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

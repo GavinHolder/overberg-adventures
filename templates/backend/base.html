@@ -1,0 +1,228 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a3a2a">
+  <title>{% block title %}Admin{% endblock %} — Overstrand Adventures</title>
+  <link rel="icon" href="{% static 'img/logo.png' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    :root {
+      --backend-dark: #1a3a2a;
+      --backend-mid: #2d5a3d;
+      --backend-accent: #F97316;
+      --backend-bg: #f4f6f8;
+      --sidebar-width: 220px;
+    }
+    body { background: var(--backend-bg); font-size: 14px; }
+
+    /* Header */
+    .backend-header {
+      background: linear-gradient(135deg, var(--backend-dark), var(--backend-mid));
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 10px;
+    }
+    .backend-header .brand {
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+      flex: 1;
+      letter-spacing: .3px;
+    }
+    .backend-header .header-actions { display: flex; align-items: center; gap: 8px; }
+    .backend-header a { color: rgba(255,255,255,.75); text-decoration: none; font-size: 13px; }
+    .backend-header a:hover { color: #fff; }
+
+    /* Dev banner */
+    .dev-banner {
+      background: #dc2626; color: #fff; text-align: center;
+      font-size: 11px; font-weight: 700; padding: 3px 0; letter-spacing: .5px;
+    }
+
+    /* Layout */
+    .backend-layout { display: flex; min-height: calc(100vh - 52px); }
+
+    /* Sidebar */
+    .backend-sidebar {
+      width: var(--sidebar-width);
+      background: #fff;
+      border-right: 1px solid #e5e7eb;
+      position: sticky;
+      top: 52px;
+      height: calc(100vh - 52px);
+      overflow-y: auto;
+      flex-shrink: 0;
+      display: none; /* mobile: hidden */
+    }
+    @media (min-width: 768px) {
+      .backend-sidebar { display: flex; flex-direction: column; }
+    }
+    .sidebar-section {
+      padding: 12px 8px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #9ca3af;
+    }
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 16px;
+      color: #374151;
+      text-decoration: none;
+      border-radius: 8px;
+      margin: 1px 6px;
+      font-size: 13.5px;
+      transition: background .12s, color .12s;
+    }
+    .sidebar-link:hover { background: #f3f4f6; color: #111; }
+    .sidebar-link.active {
+      background: #fff7ed;
+      color: var(--backend-accent);
+      font-weight: 600;
+    }
+    .sidebar-link i { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 12px;
+      border-top: 1px solid #f3f4f6;
+    }
+
+    /* Main content */
+    .backend-main {
+      flex: 1;
+      padding: 24px;
+      max-width: 1100px;
+      width: 100%;
+    }
+    @media (max-width: 767px) {
+      .backend-main { padding: 16px; }
+    }
+
+    /* Offcanvas sidebar for mobile */
+    .offcanvas-sidebar .sidebar-link { padding: 11px 16px; font-size: 14.5px; }
+
+    /* Cards */
+    .backend-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      border: 1px solid #f0f0f0;
+    }
+
+    /* Stat cards */
+    .stat-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      border: 1px solid #f0f0f0;
+    }
+    .stat-card .stat-value { font-size: 32px; font-weight: 800; color: #111; line-height: 1; }
+    .stat-card .stat-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .stat-card .stat-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; margin-bottom: 12px;
+    }
+
+    /* Page header */
+    .page-header { margin-bottom: 20px; }
+    .page-header h4 { font-weight: 700; margin-bottom: 2px; }
+    .page-header .text-muted { font-size: 13px; }
+
+    /* Tables */
+    .backend-table { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .backend-table table { margin-bottom: 0; }
+    .backend-table thead th { background: #f9fafb; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #6b7280; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
+    .backend-table td { vertical-align: middle; font-size: 13.5px; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  {% if dev_mode %}
+  <div class="dev-banner">DEV MODE &mdash; not for production</div>
+  {% endif %}
+
+  <!-- Header -->
+  <header class="backend-header">
+    <!-- Mobile hamburger -->
+    <button class="btn btn-sm border-0 d-md-none me-1 p-0"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#sidebarOffcanvas"
+            style="color:rgba(255,255,255,.8); font-size:20px; line-height:1;">
+      <i class="bi bi-list"></i>
+    </button>
+
+    <img src="{% static 'img/logo.png' %}" alt="Logo" height="28">
+    <span class="brand">Overstrand Admin</span>
+
+    <div class="header-actions">
+      <!-- Link to guide portal -->
+      <a href="{% url 'dashboard:tours_list' %}" title="Guide Portal">
+        <i class="bi bi-grid-3x3-gap"></i>
+      </a>
+      <!-- User indicator -->
+      <span style="color:rgba(255,255,255,.6); font-size:12px;">{{ request.user.email }}</span>
+      <!-- Logout -->
+      <a href="{% url 'accounts:logout' %}" title="Logout">
+        <i class="bi bi-box-arrow-right"></i>
+      </a>
+    </div>
+  </header>
+
+  <!-- Mobile offcanvas sidebar -->
+  <div class="offcanvas offcanvas-start offcanvas-sidebar" tabindex="-1" id="sidebarOffcanvas" style="width:260px;">
+    <div class="offcanvas-header" style="background: linear-gradient(135deg, #1a3a2a, #2d5a3d);">
+      <h6 class="offcanvas-title text-white fw-bold">Overstrand Admin</h6>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+      {% include 'backend/partials/sidebar_nav.html' %}
+    </div>
+  </div>
+
+  <!-- Main layout -->
+  <div class="backend-layout">
+
+    <!-- Desktop sidebar -->
+    <aside class="backend-sidebar">
+      {% include 'backend/partials/sidebar_nav.html' %}
+    </aside>
+
+    <!-- Content -->
+    <main class="backend-main">
+      {% if messages %}
+      <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show py-2 px-3" style="border-radius:10px; font-size:13px;">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

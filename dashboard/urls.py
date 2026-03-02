@@ -25,7 +25,4 @@ urlpatterns = [
     path('guides/<int:pk>/edit/', views.guide_edit, name='guide_edit'),
     path('tours/<int:tour_pk>/photos/upload/', views.photo_upload, name='photo_upload'),
     path('photos/<int:pk>/delete/', views.photo_delete, name='photo_delete'),
-    path('settings/social-auth/', views.settings_social_auth, name='settings_social_auth'),
-    path('settings/social-auth/<int:pk>/toggle/', views.settings_social_auth_toggle, name='settings_social_auth_toggle'),
-    path('settings/social-auth/<int:pk>/save/', views.settings_social_auth_save, name='settings_social_auth_save'),
 ]

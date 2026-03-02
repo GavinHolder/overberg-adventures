@@ -1,0 +1,109 @@
+{% extends 'backend/base.html' %}
+{% load static %}
+
+{% block title %}Site Settings{% endblock %}
+{% block nav_site %}active{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between">
+  <div>
+    <h4>Site Settings</h4>
+    <p class="text-muted">Company info, contact details, and social media links.</p>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  <div class="row g-3">
+
+    <!-- Company Info -->
+    <div class="col-12">
+      <div class="backend-card">
+        <h6 class="fw-bold mb-3"><i class="bi bi-building me-2 text-muted"></i>Company Info</h6>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label small text-muted">Company Name</label>
+            <input type="text" name="company_name" class="form-control" value="{{ settings.company_name }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small text-muted">Tagline</label>
+            <input type="text" name="tagline" class="form-control" value="{{ settings.tagline }}" placeholder="Your adventure awaits">
+          </div>
+          <div class="col-12">
+            <label class="form-label small text-muted">Logo</label>
+            <div class="d-flex align-items-center gap-3">
+              {% if settings.logo %}
+              <img src="{{ settings.logo.url }}" alt="Logo" style="height:48px; width:48px; object-fit:contain; border-radius:8px; border:1px solid #e5e7eb;">
+              {% else %}
+              <div style="height:48px; width:48px; background:#f3f4f6; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                <i class="bi bi-image text-muted"></i>
+              </div>
+              {% endif %}
+              <input type="file" name="logo" class="form-control form-control-sm" accept="image/*" style="max-width:280px;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Details -->
+    <div class="col-12 col-md-6">
+      <div class="backend-card h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-telephone me-2 text-muted"></i>Contact Details</h6>
+        <div class="d-flex flex-column gap-3">
+          <div>
+            <label class="form-label small text-muted">Email</label>
+            <input type="email" name="contact_email" class="form-control" value="{{ settings.contact_email }}" placeholder="info@yourdomain.com">
+          </div>
+          <div>
+            <label class="form-label small text-muted">Phone</label>
+            <input type="text" name="contact_phone" class="form-control" value="{{ settings.contact_phone }}" placeholder="+27 21 000 0000">
+          </div>
+          <div>
+            <label class="form-label small text-muted">WhatsApp Number</label>
+            <input type="text" name="whatsapp_number" class="form-control" value="{{ settings.whatsapp_number }}" placeholder="+27 82 000 0000">
+          </div>
+          <div>
+            <label class="form-label small text-muted">Address</label>
+            <textarea name="address" class="form-control" rows="3" placeholder="123 Ocean Drive, Hermanus">{{ settings.address }}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social Media -->
+    <div class="col-12 col-md-6">
+      <div class="backend-card h-100">
+        <h6 class="fw-bold mb-3"><i class="bi bi-share me-2 text-muted"></i>Social Media</h6>
+        <div class="d-flex flex-column gap-3">
+          <div>
+            <label class="form-label small text-muted"><i class="bi bi-instagram me-1" style="color:#E1306C;"></i>Instagram URL</label>
+            <input type="url" name="instagram_url" class="form-control" value="{{ settings.instagram_url }}" placeholder="https://instagram.com/...">
+          </div>
+          <div>
+            <label class="form-label small text-muted"><i class="bi bi-facebook me-1" style="color:#1877F2;"></i>Facebook URL</label>
+            <input type="url" name="facebook_url" class="form-control" value="{{ settings.facebook_url }}" placeholder="https://facebook.com/...">
+          </div>
+          <div>
+            <label class="form-label small text-muted"><i class="bi bi-twitter-x me-1"></i>Twitter / X URL</label>
+            <input type="url" name="twitter_url" class="form-control" value="{{ settings.twitter_url }}" placeholder="https://x.com/...">
+          </div>
+          <div>
+            <label class="form-label small text-muted"><i class="bi bi-globe me-1" style="color:#374151;"></i>Website URL</label>
+            <input type="url" name="website_url" class="form-control" value="{{ settings.website_url }}" placeholder="https://yourdomain.com">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save -->
+    <div class="col-12">
+      <button type="submit" class="btn btn-warning fw-bold px-4" style="border-radius:10px;">
+        <i class="bi bi-floppy me-1"></i>Save Settings
+      </button>
+    </div>
+
+  </div>
+</form>
+{% endblock %}

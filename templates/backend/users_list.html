@@ -1,0 +1,102 @@
+{% extends 'backend/base.html' %}
+
+{% block title %}Users{% endblock %}
+{% block nav_users %}active{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <div>
+    <h4>Users</h4>
+    <p class="text-muted">All registered accounts and their roles.</p>
+  </div>
+</div>
+
+<!-- Role filter tabs -->
+<div class="d-flex gap-2 mb-3 flex-wrap">
+  <a href="{% url 'backend:users_list' %}"
+     class="btn btn-sm {% if not role_filter %}btn-dark{% else %}btn-outline-secondary{% endif %}"
+     style="border-radius:20px;">All</a>
+  {% for value, label in role_choices %}
+  <a href="?role={{ value }}"
+     class="btn btn-sm {% if role_filter == value %}btn-dark{% else %}btn-outline-secondary{% endif %}"
+     style="border-radius:20px;">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="backend-table">
+  <table class="table table-hover mb-0">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th class="d-none d-md-table-cell">Role</th>
+        <th class="d-none d-md-table-cell">Joined</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      {% with profile=u.profile %}
+      <tr id="user-row-{{ u.pk }}">
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <!-- Avatar -->
+            <div style="width:32px; height:32px; border-radius:50%; overflow:hidden; flex-shrink:0;
+                        background:linear-gradient(135deg,#F97316,#EA580C);
+                        display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; font-weight:700;">
+              {% if profile.display_avatar %}
+                <img src="{{ profile.display_avatar }}" style="width:100%; height:100%; object-fit:cover;" referrerpolicy="no-referrer" alt="">
+              {% else %}
+                {{ profile.initials }}
+              {% endif %}
+            </div>
+            <div>
+              <div class="fw-semibold" style="font-size:13px;">{{ profile.full_name }}</div>
+              <div class="text-muted" style="font-size:11px;">{{ u.email }}</div>
+            </div>
+          </div>
+        </td>
+        <td class="d-none d-md-table-cell">
+          {% if profile.role == 'ADMIN' %}
+            <span class="badge" style="background:#fee2e2; color:#dc2626;">Admin</span>
+          {% elif profile.role == 'OPERATOR' %}
+            <span class="badge" style="background:#fff7ed; color:#F97316;">Operator</span>
+          {% elif profile.role == 'GUIDE' %}
+            <span class="badge" style="background:#f0fdf4; color:#16a34a;">Guide</span>
+          {% else %}
+            <span class="badge" style="background:#f3f4f6; color:#6b7280;">Guest</span>
+          {% endif %}
+          {% if u.is_staff %}<span class="badge bg-dark ms-1" style="font-size:9px;">staff</span>{% endif %}
+        </td>
+        <td class="d-none d-md-table-cell text-muted" style="font-size:12px;">
+          {{ u.date_joined|date:"d M Y" }}
+        </td>
+        <td>
+          <form hx-post="{% url 'backend:user_toggle_active' u.pk %}"
+                hx-target="#user-row-{{ u.pk }}"
+                hx-swap="outerHTML">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm p-0 border-0" style="background:none;" title="Toggle active">
+              {% if u.is_active %}
+                <span class="badge" style="background:#dcfce7; color:#16a34a; cursor:pointer;">Active</span>
+              {% else %}
+                <span class="badge" style="background:#fee2e2; color:#dc2626; cursor:pointer;">Inactive</span>
+              {% endif %}
+            </button>
+          </form>
+        </td>
+        <td>
+          <a href="{% url 'backend:user_edit' u.pk %}" class="btn btn-sm btn-outline-secondary" style="border-radius:8px; font-size:12px; padding:3px 10px;">
+            Edit
+          </a>
+        </td>
+      </tr>
+      {% endwith %}
+      {% empty %}
+      <tr><td colspan="5" class="text-center text-muted py-4">No users found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

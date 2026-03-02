@@ -1,0 +1,29 @@
+{% load static %}
+
+<div class="sidebar-section">Main</div>
+<a href="{% url 'backend:overview' %}"
+   class="sidebar-link {% block nav_overview %}{% endblock %}">
+  <i class="bi bi-speedometer2"></i> Overview
+</a>
+
+<div class="sidebar-section">Site</div>
+<a href="{% url 'backend:site_settings' %}"
+   class="sidebar-link {% block nav_site %}{% endblock %}">
+  <i class="bi bi-gear"></i> Site Settings
+</a>
+<a href="{% url 'backend:social_auth' %}"
+   class="sidebar-link {% block nav_social %}{% endblock %}">
+  <i class="bi bi-shield-lock"></i> Social Auth
+</a>
+
+<div class="sidebar-section">People</div>
+<a href="{% url 'backend:users_list' %}"
+   class="sidebar-link {% block nav_users %}{% endblock %}">
+  <i class="bi bi-people"></i> Users
+</a>
+
+<div class="sidebar-footer">
+  <a href="{% url 'dashboard:tours_list' %}" class="sidebar-link" style="color:#6b7280;">
+    <i class="bi bi-grid-3x3-gap"></i> Guide Portal
+  </a>
+</div>

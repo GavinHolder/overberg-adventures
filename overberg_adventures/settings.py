@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'apps.sos',
     'apps.backups',
     'dashboard',
+    'adminpanel',
 ]
 
 # ---------------------------------------------------------------------------

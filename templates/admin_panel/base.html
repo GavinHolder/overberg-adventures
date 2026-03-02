@@ -20,8 +20,17 @@
 
   <header class="dashboard-header d-flex align-items-center px-3 py-2">
     <img src="{% static 'img/logo.png' %}" alt="Logo" height="32" class="me-2">
-    <span class="fw-bold text-white flex-grow-1" style="font-size:1rem;">Guide Dashboard</span>
-    <a href="/" class="text-white-50 small"><i class="bi bi-box-arrow-right"></i></a>
+    <span class="fw-bold text-white flex-grow-1" style="font-size:1rem;">Guide Portal</span>
+    {% if request.user.is_staff %}
+    <a href="{% url 'backend:overview' %}" class="text-white-50 small me-3" title="Admin Backend">
+      <i class="bi bi-speedometer2"></i>
+    </a>
+    {% elif request.user.profile.role == 'OPERATOR' or request.user.profile.role == 'ADMIN' %}
+    <a href="{% url 'backend:overview' %}" class="text-white-50 small me-3" title="Admin Backend">
+      <i class="bi bi-speedometer2"></i>
+    </a>
+    {% endif %}
+    <a href="{% url 'accounts:logout' %}" class="text-white-50 small"><i class="bi bi-box-arrow-right"></i></a>
   </header>
 
   <div class="dash-layout">
@@ -43,12 +52,6 @@
          class="dash-tab flex-fill text-center py-2 {% block tab_guides %}{% endblock %}">
         <i class="bi bi-person-badge d-block fs-5"></i><span class="small">Guides</span>
       </a>
-      {% if request.user.is_staff %}
-      <a href="{% url 'dashboard:settings_social_auth' %}"
-         class="dash-tab flex-fill text-center py-2 {% block tab_settings %}{% endblock %}">
-        <i class="bi bi-gear d-block fs-5"></i><span class="small">Settings</span>
-      </a>
-      {% endif %}
     </nav>
 
     <main class="dashboard-main" id="dashboard-content">
