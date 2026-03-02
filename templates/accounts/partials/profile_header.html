@@ -1,9 +1,15 @@
 <div class="profile-header-card mx-3 mb-4 text-center">
-  {% if profile.avatar %}
-    <img src="{{ profile.avatar.url }}" class="profile-avatar-img mb-3" alt="avatar">
-  {% else %}
-    <div class="profile-avatar-circle mx-auto mb-3">{{ profile.initials|upper }}</div>
-  {% endif %}
+  <!-- Avatar: circular, 72px, shows photo or initials -->
+  <div class="mx-auto mb-3" style="width:72px; height:72px; border-radius:50%; overflow:hidden; background: linear-gradient(135deg, #F97316, #EA580C); display:flex; align-items:center; justify-content:center;">
+    {% if profile.display_avatar %}
+      <img src="{{ profile.display_avatar }}"
+           alt="{{ profile.full_name }}"
+           style="width:100%; height:100%; object-fit:cover;"
+           referrerpolicy="no-referrer">
+    {% else %}
+      <span style="color:white; font-size:24px; font-weight:700; letter-spacing:-1px;">{{ profile.initials }}</span>
+    {% endif %}
+  </div>
   <h1 class="fw-bold text-white mb-1" style="font-size:1.4rem">{{ profile.full_name }}</h1>
   <p class="mb-3" style="color:rgba(255,255,255,0.8);font-size:0.95rem">{{ profile.get_role_display }}</p>
   <a href="{% url 'accounts:profile_setup_step' step=1 %}" class="profile-edit-btn">

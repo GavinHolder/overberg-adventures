@@ -1,8 +1,18 @@
 <div class="card-oa mb-4">
   <div class="d-flex align-items-center gap-3 mb-3">
+    <!-- Avatar: circular, shows photo or initials -->
     <div class="guest-avatar-lg d-flex align-items-center justify-content-center fw-bold text-white"
-         style="font-size:1.3rem; background: linear-gradient(135deg,#7C3AED,#5B21B6);">
-      {% if profile.initials %}{{ profile.initials|upper }}{% else %}{{ profile.first_name|first|upper }}{% endif %}
+         style="font-size:1.3rem; background: linear-gradient(135deg,#7C3AED,#5B21B6); overflow:hidden;">
+      {% if profile.display_avatar %}
+        <img src="{{ profile.display_avatar }}"
+             alt="{{ profile.full_name }}"
+             style="width:100%;height:100%;object-fit:cover;"
+             referrerpolicy="no-referrer">
+      {% elif profile.initials %}
+        {{ profile.initials|upper }}
+      {% else %}
+        {{ profile.first_name|first|upper }}
+      {% endif %}
     </div>
     <div>
       <div class="fw-bold fs-6">{{ profile.full_name }}</div>

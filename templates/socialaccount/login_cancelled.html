@@ -1,0 +1,17 @@
+{% extends 'base_app.html' %}
+{% load static %}
+
+{% block title %}Login Cancelled — Overstrand Adventures{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex flex-column justify-content-center align-items-center" style="background: var(--color-bg); padding: 32px 24px;">
+  <div class="text-center">
+    <div style="width:64px; height:64px; background:#FEF3C7; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+      <i class="bi bi-x-lg" style="color:#D97706; font-size:24px;"></i>
+    </div>
+    <h2 class="fw-bold mb-2" style="font-size:22px;">Login cancelled</h2>
+    <p style="color: var(--color-text-muted); font-size:14px; margin-bottom:24px;">You cancelled the sign-in. No problem — try again whenever you're ready.</p>
+    <a href="{% url 'accounts:login' %}" class="btn-oa-primary">Back to Login</a>
+  </div>
+</div>
+{% endblock %}

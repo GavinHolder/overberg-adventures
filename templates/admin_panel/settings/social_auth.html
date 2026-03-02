@@ -1,0 +1,39 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Settings — Social Auth{% endblock %}
+{% block tab_settings %}active{% endblock %}
+
+{% block content %}
+<div class="p-3">
+
+  <div class="d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-shield-lock fs-4" style="color: var(--dash-accent);"></i>
+    <div>
+      <h5 class="mb-0 fw-bold">Social Login Providers</h5>
+      <p class="mb-0 text-muted small">Configure OAuth providers for the guest login page.</p>
+    </div>
+  </div>
+
+  <div id="providers-list" class="d-flex flex-column gap-3">
+    {% for provider in providers %}
+      {% include 'admin_panel/settings/partials/provider_card.html' with provider=provider %}
+    {% empty %}
+      <div class="text-center text-muted py-4">
+        <i class="bi bi-plug fs-1 d-block mb-2 opacity-25"></i>
+        <p>No social providers configured yet.</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="mt-4 p-3 rounded" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+    <p class="small text-muted mb-1"><strong>How to add a new provider:</strong></p>
+    <ol class="small text-muted mb-0 ps-3">
+      <li>Create OAuth credentials in the provider's developer console</li>
+      <li>Add the callback URL: <code>{{ request.scheme }}://{{ request.get_host }}/accounts/&lt;provider&gt;/login/callback/</code></li>
+      <li>Enter the Client ID and Secret below and enable the provider</li>
+    </ol>
+  </div>
+
+</div>
+{% endblock %}

@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST, require_http_methods
 from django.contrib.auth.decorators import login_required
 
-from .models import EmailOTP, UserProfile
+from .models import EmailOTP, UserProfile, SocialAuthProvider
 from .emails import send_otp_email
 
 User = get_user_model()
@@ -41,8 +41,17 @@ def _get_otp_user(request):
 def login_page(request):
     if request.user.is_authenticated:
         return redirect('/')
+
+    # Determine which social providers are active (enabled + configured)
+    active_providers = set(
+        p.provider
+        for p in SocialAuthProvider.objects.filter(enabled=True)
+        if p.is_active
+    )
+
     return render(request, 'accounts/login.html', {
         'dev_mode': getattr(settings, 'DEV_MODE', False),
+        'google_active': 'google' in active_providers,
     })
 
 

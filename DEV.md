@@ -101,3 +101,38 @@ DEBUG=True
 SECRET_KEY=...
 DATABASE_URL=sqlite:///db.sqlite3
 ```
+
+---
+
+## Social Auth (Google OAuth)
+
+Social login is managed via the backend dashboard at `/guide/settings/social-auth/` (staff login required).
+
+### Setup Steps
+
+1. **Create a Google OAuth app:**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   - Create an OAuth 2.0 Client ID (Web application type)
+   - Add authorised redirect URI: `http://localhost:8000/accounts/google/login/callback/` (dev)
+   - For production: `https://yourdomain.com/accounts/google/login/callback/`
+
+2. **Configure in backend dashboard:**
+   - Log in as a staff user
+   - Go to `/guide/settings/social-auth/`
+   - Enter the Client ID and Client Secret for Google
+   - Toggle the provider to **Enabled**
+   - The Google button will appear on the login page immediately
+
+3. **Alternative — use env vars (for dev/CI):**
+   ```
+   GOOGLE_CLIENT_ID=your_client_id_here
+   GOOGLE_SECRET=your_client_secret_here
+   ```
+   Set `enabled=True` on the `SocialAuthProvider` record in the Django admin or via shell.
+
+### Django Site ID
+
+Make sure `SITE_ID=1` in your `.env`. The sites framework must have a `Site` record with `pk=1`.
+To verify: `python manage.py shell -c "from django.contrib.sites.models import Site; print(list(Site.objects.all()))"`
+
+If missing: `python manage.py shell -c "from django.contrib.sites.models import Site; Site.objects.get_or_create(pk=1, defaults={'domain': 'localhost:8000', 'name': 'localhost'})"`

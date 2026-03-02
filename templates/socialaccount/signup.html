@@ -1,0 +1,31 @@
+{% extends 'base_app.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Confirm Your Account — Overstrand Adventures{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex flex-column justify-content-center" style="background: var(--color-bg); padding: 32px 24px;">
+
+  <!-- Logo -->
+  <div class="text-center mb-4">
+    <img src="{% static 'img/logo.png' %}" alt="Overstrand Adventures" style="width: 64px; height: 64px; object-fit: contain;">
+    <h1 class="fw-bold mt-3 mb-1" style="font-size: 24px; color: var(--color-text);">Almost there!</h1>
+    <p style="color: var(--color-text-muted); font-size: 14px;">Confirm your details to complete sign-in.</p>
+  </div>
+
+  <div class="card-oa mb-4">
+    <form method="post" action="{% url 'socialaccount_signup' %}">
+      {% csrf_token %}
+      {{ form.as_p }}
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+      {% endif %}
+      <button type="submit" class="btn-oa-primary mt-2">
+        {% trans "Continue" %}
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

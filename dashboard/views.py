@@ -1023,3 +1023,108 @@ def photo_delete(request, pk):
 
     # Reject GET, PUT, PATCH etc. — this endpoint is write-only
     return HttpResponse(status=405)
+
+
+# ---------------------------------------------------------------------------
+# Settings — Social Auth
+# ---------------------------------------------------------------------------
+
+@staff_required
+def settings_social_auth(request):
+    """
+    Staff-only page to manage social OAuth providers.
+
+    Lists all SocialAuthProvider records. Staff can toggle each provider
+    enabled/disabled and update OAuth credentials (client_id / client_secret).
+
+    Context:
+    - providers: all SocialAuthProvider records
+    - dev_mode: bool
+
+    ASSUMPTIONS:
+    1. Only staff users reach this view (@staff_required enforces this).
+    2. SocialAuthProvider records are pre-seeded via a data migration or fixture.
+
+    FAILURE MODES:
+    - Empty queryset: template renders an empty-state message — no error.
+    """
+    from apps.accounts.models import SocialAuthProvider
+    providers = SocialAuthProvider.objects.all().order_by('display_name')
+    return render(request, 'admin_panel/settings/social_auth.html', {
+        'providers': providers,
+        'dev_mode': _dev_mode(),
+    })
+
+
+@staff_required
+def settings_social_auth_toggle(request, pk):
+    """
+    HTMX POST — toggle a social provider enabled/disabled.
+
+    Returns the provider card partial for in-place HTMX swap.
+
+    Args:
+        pk: SocialAuthProvider primary key
+
+    FAILURE MODES:
+    - Non-POST method: 405 Method Not Allowed
+    - Provider not found: 404 Not Found
+    """
+    from apps.accounts.models import SocialAuthProvider
+    if request.method != 'POST':
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(['POST'])
+
+    try:
+        provider = SocialAuthProvider.objects.get(pk=pk)
+    except SocialAuthProvider.DoesNotExist:
+        from django.http import HttpResponseNotFound
+        return HttpResponseNotFound()
+
+    provider.enabled = not provider.enabled
+    provider.save(update_fields=['enabled'])
+
+    return render(request, 'admin_panel/settings/partials/provider_card.html', {
+        'provider': provider,
+    })
+
+
+@staff_required
+def settings_social_auth_save(request, pk):
+    """
+    HTMX POST — save client_id and client_secret for a social provider.
+
+    Returns the provider card partial for in-place HTMX swap.
+    Trims whitespace from credentials to avoid common copy-paste mistakes.
+
+    Args:
+        pk: SocialAuthProvider primary key
+
+    ASSUMPTIONS:
+    1. Empty string submissions are valid — they clear existing credentials.
+    2. Whitespace trimming prevents invisible trailing spaces breaking OAuth.
+
+    FAILURE MODES:
+    - Non-POST method: 405 Method Not Allowed
+    - Provider not found: 404 Not Found
+    - Empty credentials posted: credentials cleared (intentional — allows reset)
+    """
+    from apps.accounts.models import SocialAuthProvider
+    if request.method != 'POST':
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(['POST'])
+
+    try:
+        provider = SocialAuthProvider.objects.get(pk=pk)
+    except SocialAuthProvider.DoesNotExist:
+        from django.http import HttpResponseNotFound
+        return HttpResponseNotFound()
+
+    provider.client_id = request.POST.get('client_id', '').strip()
+    provider.client_secret = request.POST.get('client_secret', '').strip()
+    provider.save(update_fields=['client_id', 'client_secret'])
+
+    return render(request, 'admin_panel/settings/partials/provider_card.html', {
+        'provider': provider,
+        'saved': True,
+    })

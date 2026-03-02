@@ -30,9 +30,12 @@
   </a>
 
   <a href="{% url 'accounts:profile' %}" class="bottom-nav-item {% if request.path == '/accounts/profile/' %}active{% endif %}">
-    <span class="avatar-sm bg-purple">
-      {% if request.user.profile.avatar %}
-        <img src="{{ request.user.profile.avatar.url }}" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+    <span class="avatar-sm bg-purple" style="overflow:hidden; display:flex; align-items:center; justify-content:center;">
+      {% if request.user.profile.display_avatar %}
+        <img src="{{ request.user.profile.display_avatar }}"
+             alt="avatar"
+             style="width:100%;height:100%;border-radius:50%;object-fit:cover;"
+             referrerpolicy="no-referrer">
       {% else %}
         {{ request.user.profile.initials }}
       {% endif %}

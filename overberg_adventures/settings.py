@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-    'allauth.socialaccount.providers.facebook',
     'anymail',
     'webpush',
     'django_celery_beat',
@@ -145,7 +144,34 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # We handle email verification ourselves via OTP
+
+# ---------------------------------------------------------------------------
+# django-allauth social auth
+# ---------------------------------------------------------------------------
+
+# We use our own email/OTP auth, not allauth's email flow.
+# allauth is used ONLY for social OAuth (Google, etc.).
+
+# Use our custom adapter so social logins flow into our profile system
+SOCIALACCOUNT_ADAPTER = 'apps.accounts.adapters.OurSocialAccountAdapter'
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        # Credentials are loaded from SocialApp DB record (managed via backend admin).
+        # Fallback to env vars below when no DB record exists (e.g. fresh installs).
+        'APP': {
+            'client_id': config('GOOGLE_CLIENT_ID', default=''),
+            'secret': config('GOOGLE_SECRET', default=''),
+            'key': '',
+        },
+    },
+}
+
+# After social login, check profile setup in adapter — not via this redirect
+SOCIALACCOUNT_LOGIN_ON_GET = True  # Allow direct GET to start OAuth flow
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
