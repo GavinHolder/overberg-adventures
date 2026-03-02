@@ -13,18 +13,13 @@
 
 {# Centred card containing the QR image and text code #}
 <div class="text-center mb-3">
-  {#
-    QR code image: src points to the tour_qr_png endpoint which returns a
-    freshly-rendered PNG of the join URL.  max-width keeps it scannable on
-    small screens without overflowing the card.
-  #}
+  {# QR code image — src points to tour_qr_png endpoint; max-width keeps it scannable on small screens. #}
   <img src="{{ qr_url }}"
        alt="QR Code for {{ tour.name }}"
        class="img-fluid mb-3"
        style="max-width:240px;border-radius:8px;">
 
-  {# Tour code in large monospace text as a manual-entry fallback for guests
-     who cannot scan the QR (older phones, poor camera). #}
+  {# Tour code in large monospace — manual-entry fallback for guests who cannot scan QR. #}
   <div class="fw-bold font-monospace fs-4 mb-1">{{ tour.tour_code }}</div>
   <div class="text-muted small mb-3">
     Guests scan to join &mdash; or enter the code on the home screen
@@ -33,22 +28,14 @@
 
 {# Action buttons: download PNG and share/copy join URL #}
 <div class="d-flex gap-2">
-  {#
-    Download button: the 'download' attribute instructs the browser to save
-    the linked resource rather than navigate to it.  The filename is set to
-    the tour code so guides can identify the file after downloading.
-  #}
+  {# Download button — 'download' attr saves file rather than navigating; filename set to tour code. #}
   <a href="{{ qr_url }}"
      download="{{ tour.tour_code }}-qr.png"
      class="btn btn-warning fw-bold flex-fill">
     <i class="bi bi-download me-1"></i>Download PNG
   </a>
 
-  {#
-    Share button: uses the Web Share API when available (Android Chrome,
-    Safari iOS) for native sharing.  Falls back to clipboard copy on
-    desktop browsers that don't support navigator.share.
-  #}
+  {# Share button — Web Share API on mobile; falls back to clipboard copy on desktop. #}
   <button class="btn btn-outline-secondary"
           onclick="
             if (navigator.share) {

@@ -41,6 +41,9 @@ env/
 plannig/
 screenshots/
 
+# Local-only docs (contain secrets — never commit)
+*.local.md
+
 # OS
 .DS_Store
 Thumbs.db

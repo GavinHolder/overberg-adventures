@@ -20,6 +20,9 @@ redis==5.2.1
 # Push notifications
 django-webpush==0.3.6
 
+# Field-level encryption (OAuth secrets, PII)
+django-encrypted-model-fields==0.6.5
+
 # Rate limiting
 django-ratelimit==4.1.0
 

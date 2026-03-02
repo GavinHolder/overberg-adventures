@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
 
     # Third party
+    'encrypted_model_fields',
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -161,13 +162,9 @@ SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'SCOPE': ['profile', 'email'],
         'AUTH_PARAMS': {'access_type': 'online'},
-        # Credentials are loaded from SocialApp DB record (managed via backend admin).
-        # Fallback to env vars below when no DB record exists (e.g. fresh installs).
-        'APP': {
-            'client_id': config('GOOGLE_CLIENT_ID', default=''),
-            'secret': config('GOOGLE_SECRET', default=''),
-            'key': '',
-        },
+        # Credentials are managed via SocialApp DB record (backend admin → Social Auth Providers).
+        # Do NOT add an 'APP' key here — it creates a duplicate SocialApp record alongside the
+        # DB-managed one, causing MultipleObjectsReturned in allauth's get_app().
     },
 }
 
@@ -253,6 +250,14 @@ WEBPUSH_SETTINGS = {
     'VAPID_PRIVATE_KEY': config('VAPID_PRIVATE_KEY', default=''),
     'VAPID_ADMIN_EMAIL': config('VAPID_ADMIN_EMAIL', default='dev@localhost'),
 }
+
+# ---------------------------------------------------------------------------
+# Field-level encryption
+# ---------------------------------------------------------------------------
+
+# Fernet key for encrypting sensitive DB fields (OAuth secrets, PII).
+# Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+FIELD_ENCRYPTION_KEY = config('FIELD_ENCRYPTION_KEY', default='')
 
 # ---------------------------------------------------------------------------
 # Payments

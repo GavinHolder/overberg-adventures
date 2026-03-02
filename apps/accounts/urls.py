@@ -13,9 +13,6 @@ urlpatterns = [
     path('settings/toggle/', views.profile_settings_toggle, name='settings_toggle'),
     path('profile/', views.profile_view, name='profile'),
     path('logout/', views.logout_view, name='logout'),
-    # allauth social OAuth URLs — shared views (cancelled, error, signup, connections)
-    path('', include('allauth.socialaccount.urls')),
-    # Google OAuth2 URLs — /accounts/google/login/ and /accounts/google/login/callback/
-    # Provider URLs are separate from allauth.socialaccount.urls and must be included explicitly.
-    path('', include('allauth.socialaccount.providers.google.urls')),
+    # allauth social URLs are included directly in the root urls.py (not here) to avoid
+    # namespace conflicts — allauth reverses 'google_callback' without any namespace prefix.
 ]

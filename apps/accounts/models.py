@@ -3,6 +3,11 @@ from datetime import timedelta
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from encrypted_model_fields.fields import (
+    EncryptedCharField,
+    EncryptedTextField,
+    EncryptedDateField,
+)
 
 User = get_user_model()
 
@@ -47,8 +52,8 @@ class UserProfile(models.Model):
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.GUEST)
     first_name = models.CharField(max_length=100, blank=True)
     last_name = models.CharField(max_length=100, blank=True)
-    phone_whatsapp = models.CharField(max_length=20, blank=True)
-    date_of_birth = models.DateField(null=True, blank=True)
+    phone_whatsapp = EncryptedCharField(max_length=20, blank=True)
+    date_of_birth = EncryptedDateField(null=True, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     avatar_url = models.URLField(
         max_length=500,
@@ -62,10 +67,10 @@ class UserProfile(models.Model):
     )
     # Step 2: Health
     fitness_level = models.PositiveSmallIntegerField(default=3)  # 1-5
-    medical_conditions = models.TextField(blank=True)
-    dietary_requirements = models.TextField(blank=True)
+    medical_conditions = EncryptedTextField(blank=True)
+    dietary_requirements = EncryptedTextField(blank=True)
     # Step 4: Notes
-    personal_notes = models.TextField(blank=True)
+    personal_notes = EncryptedTextField(blank=True)
     # Step 5: Indemnity
     indemnity_accepted = models.BooleanField(default=False)
     indemnity_accepted_at = models.DateTimeField(null=True, blank=True)
@@ -125,8 +130,7 @@ class SocialAuthProvider(models.Model):
 
     ASSUMPTIONS:
     1. SITE_ID=1 is always valid (django.contrib.sites is installed).
-    2. client_id and client_secret are stored in plaintext — acceptable for MVP,
-       encrypt at rest in production via Django encrypted fields or vault.
+    2. client_id and client_secret are AES-encrypted at rest via EncryptedCharField.
     3. Only providers listed in Provider.choices are supported by allauth.
 
     FAILURE MODES:
@@ -153,8 +157,8 @@ class SocialAuthProvider(models.Model):
         default=False,
         help_text='When disabled, the login button is hidden regardless of credentials.',
     )
-    client_id = models.CharField(max_length=500, blank=True)
-    client_secret = models.CharField(max_length=500, blank=True)
+    client_id = EncryptedCharField(max_length=500, blank=True)
+    client_secret = EncryptedCharField(max_length=500, blank=True)
     extra_config = models.JSONField(
         default=dict,
         blank=True,

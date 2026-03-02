@@ -2,23 +2,23 @@
 
 <div class="sidebar-section">Main</div>
 <a href="{% url 'backend:overview' %}"
-   class="sidebar-link {% block nav_overview %}{% endblock %}">
+   class="sidebar-link {% if request.resolver_match.url_name == 'overview' %}active{% endif %}">
   <i class="bi bi-speedometer2"></i> Overview
 </a>
 
 <div class="sidebar-section">Site</div>
 <a href="{% url 'backend:site_settings' %}"
-   class="sidebar-link {% block nav_site %}{% endblock %}">
+   class="sidebar-link {% if request.resolver_match.url_name == 'site_settings' %}active{% endif %}">
   <i class="bi bi-gear"></i> Site Settings
 </a>
 <a href="{% url 'backend:social_auth' %}"
-   class="sidebar-link {% block nav_social %}{% endblock %}">
+   class="sidebar-link {% if request.resolver_match.url_name == 'social_auth' %}active{% endif %}">
   <i class="bi bi-shield-lock"></i> Social Auth
 </a>
 
 <div class="sidebar-section">People</div>
 <a href="{% url 'backend:users_list' %}"
-   class="sidebar-link {% block nav_users %}{% endblock %}">
+   class="sidebar-link {% if request.resolver_match.url_name == 'users_list' or request.resolver_match.url_name == 'user_edit' %}active{% endif %}">
   <i class="bi bi-people"></i> Users
 </a>
 

@@ -23,6 +23,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('service-worker.js', service_worker, name='service-worker'),
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
+    # allauth social OAuth URLs — must be outside the 'accounts' namespace so allauth can
+    # reverse 'google_callback' etc. without a namespace prefix (allauth does not use namespaces).
+    path('accounts/', include('allauth.socialaccount.urls')),
+    path('accounts/', include('allauth.socialaccount.providers.google.urls')),
     path('backend/', include('adminpanel.urls', namespace='backend')),
     path('guide/', include('dashboard.urls', namespace='dashboard')),
     path('app/sos/', include('apps.sos.urls', namespace='sos')),
