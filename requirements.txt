@@ -14,7 +14,7 @@ django-anymail[sendgrid]==12.0
 
 # Async
 celery[redis]==5.4.0
-django-celery-beat==2.8.1
+django-celery-beat==2.9.0
 redis==5.2.1
 
 # Push notifications
