@@ -58,7 +58,7 @@ def encrypt_existing_data(apps, schema_editor):
         # date_of_birth is a DATE column — convert to string first
         cursor.execute(
             "SELECT id, date_of_birth FROM accounts_userprofile "
-            "WHERE date_of_birth IS NOT NULL AND date_of_birth != ''"
+            "WHERE date_of_birth IS NOT NULL"
         )
         rows = cursor.fetchall()
         if rows:
