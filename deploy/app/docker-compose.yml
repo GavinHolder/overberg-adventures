@@ -24,6 +24,8 @@ services:
       DB_PORT: "5432"
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       SITE_ID: ${SITE_ID:-1}
+      SITE_DOMAIN: ${SITE_DOMAIN:-}
+      SITE_NAME: ${SITE_NAME:-}
       SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-noreply@overstrandadventures.co.za}
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
