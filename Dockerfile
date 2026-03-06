@@ -16,7 +16,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN addgroup --system app && adduser --system --ingroup app app
+RUN addgroup --system app && adduser --system --ingroup app app \
+    && mkdir -p /app/staticfiles /app/mediafiles \
+    && chown -R app:app /app
 
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
