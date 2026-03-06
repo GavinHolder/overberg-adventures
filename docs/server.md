@@ -32,7 +32,7 @@
 |-----|---------|
 | http://10.0.0.14/ | App home |
 | http://10.0.0.14/accounts/login/ | Login page (Google OAuth + dev buttons) |
-| http://10.0.0.14/dashboard/ | Guide portal |
+| http://10.0.0.14/guide/ | Guide portal |
 | http://10.0.0.14/backend/ | Custom admin panel |
 | http://10.0.0.14/admin/ | Django default admin |
 
