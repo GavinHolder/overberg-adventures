@@ -1,8 +1,7 @@
-# App stack - client deploys manually from GitHub via Portainer
-# Replace YOUR_GITHUB_ORG with actual org once GitHub repo is set up
+# App stack - deployed via Portainer from GitHub
 services:
   web:
-    image: ghcr.io/YOUR_GITHUB_ORG/overberg-adventures:latest
+    image: ghcr.io/gavinholder/overberg-adventures:latest
     container_name: oa_web
     restart: unless-stopped
     env_file: .env
@@ -35,7 +34,7 @@ services:
       - traefik_net
 
   celery:
-    image: ghcr.io/YOUR_GITHUB_ORG/overberg-adventures:latest
+    image: ghcr.io/gavinholder/overberg-adventures:latest
     container_name: oa_celery
     restart: unless-stopped
     env_file: .env
@@ -47,7 +46,7 @@ services:
       - traefik_net
 
   celery-beat:
-    image: ghcr.io/YOUR_GITHUB_ORG/overberg-adventures:latest
+    image: ghcr.io/gavinholder/overberg-adventures:latest
     container_name: oa_celery_beat
     restart: unless-stopped
     env_file: .env

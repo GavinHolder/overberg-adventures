@@ -7,11 +7,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - portainer_data:/data
     ports:
-      - "127.0.0.1:9000:9000"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.portainer.rule=PathPrefix(`/portainer`) || Host(`portainer.localhost`)"
-      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+      - "9000:9000"
     networks:
       - traefik_net
 
