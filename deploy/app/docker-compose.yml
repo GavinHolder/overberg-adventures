@@ -1,8 +1,14 @@
-# App stack - deployed via Portainer from GitHub
-# Environment variables are injected by Portainer (no .env file needed)
+# App stack - build from local repo clone on the VM
+# Deploy manually:
+#   cd ~/overberg-adventures
+#   cp deploy/app/.env .env   (first time only)
+#   docker compose -f deploy/app/docker-compose.yml up --build -d
 services:
   web:
-    image: ghcr.io/gavinholder/overberg-adventures:latest
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: overberg-adventures:latest
     container_name: oa_web
     restart: unless-stopped
     environment:
@@ -58,7 +64,7 @@ services:
       - traefik_net
 
   celery:
-    image: ghcr.io/gavinholder/overberg-adventures:latest
+    image: overberg-adventures:latest
     container_name: oa_celery
     restart: unless-stopped
     environment:
@@ -83,7 +89,7 @@ services:
       - traefik_net
 
   celery-beat:
-    image: ghcr.io/gavinholder/overberg-adventures:latest
+    image: overberg-adventures:latest
     container_name: oa_celery_beat
     restart: unless-stopped
     environment:
